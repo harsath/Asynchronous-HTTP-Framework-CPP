@@ -1,0 +1,5 @@
+Warning  : This project is under active developnment, and the code is unstable. Im on the progress of the building the project. Feel free to check the code and give your points (welcomed)
+Project  : HTTP Application Server C++ Implementation (from scratch)
+RFC      : 7231
+Language : C++ (with some C UNIX Syscalls and APIs)
+Check out "socket_server_id_ud.cpp", it is a simple Internet Domain HTTP server (file) 
