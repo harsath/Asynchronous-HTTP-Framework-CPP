@@ -107,12 +107,10 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 				std::string _http_header = "HTTP/1.1 200  OK\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(_index_html_content.length()) + "\r\n\r\n" + _index_html_content;
 				http_responce = std::move(_http_header);
 			} // TODO : Deal with 404
-			else{
-				std::cout << "Does not match" << std::endl;
-			}
 			// TODO: Deal with reading other files
 		}
 		write(client_fd, http_responce.c_str(), http_responce.length());
+		http_responce = ""; _index_html_content = "";
 	}
 }
 
