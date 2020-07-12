@@ -2,4 +2,13 @@ Warning  : This project is under active developnment, and the code is unstable. 
 Project  : HTTP Application Server C++ Implementation (from scratch)
 RFC      : 7231
 Language : C++ (with some C UNIX Syscalls and APIs)
+
 Check out "socket_server_id_ud.cpp", it is a simple Internet Domain HTTP server (file) 
+
+[x] Compile "socket_server_id_ud.cpp" { g++ -Wall -std=c++17 -o server }
+	(note) By defauly, the HTTP server will be listening to port 8766
+
+[x] Add the routing configuration to the "routes.conf" for the Application server
+	Format:  <Path to Html> SPACE /<Html file name>
+
+	Example: "./html_src/file_one.html /file_one.html"
