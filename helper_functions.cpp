@@ -39,9 +39,9 @@ static inline std::vector<std::string> client_request_line_parser(const std::str
 }
 
 
-std::vector<std::pair<std::string, std::string>> header_field_value_pair(std::vector<std::string> client_request_line, HTTP_STATUS& http_stat){
+std::vector<std::pair<std::string, std::string>> header_field_value_pair(std::vector<std::string>& client_request_line, HTTP_STATUS& http_stat){
         std::vector<std::pair<std::string, std::string>> returner;
-        for(std::string header : client_request_line){
+        for(std::string& header : client_request_line){
                 char* original = strdup(header.c_str());
                 char* token;
                 std::pair<std::string, std::string> temp;
