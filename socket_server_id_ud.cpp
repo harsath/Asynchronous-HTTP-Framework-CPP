@@ -14,16 +14,24 @@
 #include "./helper_functions.cpp"
 #include <vector>
 
-namespace Socket{
-	namespace inetv4{
-	class stream_sock{
+struct Useragent_requst_resource {
+	bool file_exists;
+	std::string resource_path;
+	std::string resource_name;
+};
+
+// std::tuple<bool, std::string, std::string>
+
+
+namespace Socket::inetv4 {
+	class stream_sock {
 		private:
 			typedef struct {
 				bool index_file_not_found = 0;
 				bool file_permission_err = 0;
 				bool html_file_not_found = 0;
 			} internal_errors;
-
+			
 			internal_errors _error_flags;
 			std::string _ipv4_addr;
 			std::uint16_t _port;
@@ -55,32 +63,30 @@ namespace Socket{
 				int bind_ret = bind(_sock_fd, (struct sockaddr*) &_sock_addr, sizeof(struct sockaddr_in));
 				err_check(bind_ret, "bind");
 			} 
-			int stream_accpect();
+			int stream_accept();
 			void origin_server_side_responce(char* client_request, int& client_fd, std::string& http_responce);
 			void index_file_reader();
 			void html_file_reader(std::string& html_body);
 			void route_conf_parser(std::string conf_file_path);
 			// DS : <Exists in conf file, HTML file name, Path to file>
-			std::tuple<bool, std::string, std::string> route_path_exists(std::string client_request_html);
+			Useragent_requst_resource route_path_exists(std::string client_request_html);
 
 	};
-	} // End namespace inetv4
-} // End namespace Socket
+} // End namespace Socket::inetv4
 
 // Check the user agent requested HTML's path  config file
-// 	  <flag, filepath,    file_name>
-std::tuple<bool, std::string, std::string> Socket::inetv4::stream_sock::route_path_exists(std::string client_request_html){
+Useragent_requst_resource Socket::inetv4::stream_sock::route_path_exists(std::string client_request_html) {
 	bool flag = 0;
 	std::string path_html;
 	std::string html_filename;
-	for(std::pair<std::string, std::string>& pair: _page_routes){
-		if(client_request_html == pair.second){
+	for(const std::pair<std::string, std::string>& pair: _page_routes) {
+		if(client_request_html == pair.second) {
 			flag = 1;
 			path_html = pair.first;
 			html_filename = pair.second;
 		}
 	}
-	if(!flag){
+	if(!flag) {
 		_http_status = NOT_FOUND;
 	}
 
@@ -88,17 +94,17 @@ std::tuple<bool, std::string, std::string> Socket::inetv4::stream_sock::route_pa
 }
 
 // Parser for HTML Page routes config file
-void Socket::inetv4::stream_sock::route_conf_parser(std::string conf_file_path){
+void Socket::inetv4::stream_sock::route_conf_parser(std::string conf_file_path) {
 	std::ifstream conf_file(conf_file_path);
-	if(conf_file.is_open()){
+	if(conf_file.is_open()) {
 		std::string lines;
-		while(std::getline(conf_file, lines)){
+		while(std::getline(conf_file, lines)) {
 			char* original_line = strdup(lines.c_str());
 			char* token;
 			std::pair<std::string, std::string> temp_pusher;
-			if((token = strtok_r(original_line, " ", &original_line))){
+			if((token = strtok_r(original_line, " ", &original_line))) {
 				temp_pusher.first = token;
-				if((token = strtok_r(original_line, " ", &original_line))){
+				if((token = strtok_r(original_line, " ", &original_line))) {
 					temp_pusher.second = token;
 				}
 			}
@@ -111,12 +117,12 @@ void Socket::inetv4::stream_sock::route_conf_parser(std::string conf_file_path){
 }
 
 // Index.html parser
-void Socket::inetv4::stream_sock::index_file_reader(){
+void Socket::inetv4::stream_sock::index_file_reader() {
 	_index_html_content = ""; 
 	std::ifstream index_page(_index_file_path);	
-	if(index_page.is_open()){
+	if(index_page.is_open()) {
 		std::string html_line;
-		while(std::getline(index_page, html_line)){
+		while(std::getline(index_page, html_line)) {
 			_index_html_content += html_line;
 		}
 	}else{
@@ -125,12 +131,12 @@ void Socket::inetv4::stream_sock::index_file_reader(){
 }
 
 // reader for requested HTML file
-void Socket::inetv4::stream_sock::html_file_reader(std::string& file_path){
+void Socket::inetv4::stream_sock::html_file_reader(std::string& file_path) {
 	_html_body = "";
 	std::ifstream index_page(file_path);	
-	if(index_page.is_open()){
+	if(index_page.is_open()) {
 		std::string html_line;
-		while(std::getline(index_page, html_line)){
+		while(std::getline(index_page, html_line)) {
 			_html_body += html_line;
 		}
 	}else{
@@ -140,51 +146,69 @@ void Socket::inetv4::stream_sock::html_file_reader(std::string& file_path){
 
 
 // Server responc (Called everytime the client requests a resource)
-void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_request, int& client_fd, std::string& http_responce){
+void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_request, int& client_fd, std::string& http_responce) {
 	std::vector<std::string> client_request_http = client_request_html_split(client_request);
 	std::vector<std::string> client_request_line = client_request_line_parser(client_request_http[0]);
 	_http_status = OK;
 	
 	std::vector<std::pair<std::string, std::string>> client_header_field_value_pair = header_field_value_pair(client_request_line, _http_status);
 
-	if(client_request_line[0] == "GET"){
-		if(_http_status == BAD_REQUEST){
-			std::string bad_request = "<h2>Something went wrong, 400 Bad Request</h2>";
-			std::string _http_header = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
-			http_responce = std::move(_http_header);
-		}
-		if(_http_status == OK){
-			if(client_request_line[1] == "/" || client_request_line[1] == "/index.html"){
-				index_file_reader();
-				std::string _http_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(_index_html_content.length()) + "\r\n\r\n" + _index_html_content;
+	if(client_request_line[0] == "GET") {
+		std::string _http_header, bad_request;
+		switch(_http_status) {
+			case BAD_REQUEST: {
+				bad_request = "<h2>Something went wrong, 400 Bad Request</h2>";
+				_http_header = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
 				http_responce = std::move(_http_header);
-			}else{
-				auto [file_exists_flag, html_file_path, html_file_name] = route_path_exists(client_request_line[1]);
-				if(file_exists_flag){
-					html_file_reader(html_file_path);
-					std::string _http_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(_html_body.length()) + "\r\n\r\n" + _html_body;
+				break;
+			}
+			case OK: {
+				if(client_request_line[1] == "/" || client_request_line[1] == "/index.html") {
+					index_file_reader();
+					std::string _http_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(_index_html_content.length()) + "\r\n\r\n" + _index_html_content;
 					http_responce = std::move(_http_header);
+				}else{
+					// auto [file_exists_flag, html_file_path, html_file_name] = route_path_exists(client_request_line[1]);
+					Useragent_requst_resource useragent_req_resource = route_path_exists(client_request_line[1]);
+					if(useragent_req_resource.file_exists) {
+						html_file_reader(useragent_req_resource.resource_path);
+						std::string _http_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(_html_body.length()) + "\r\n\r\n" + _html_body;
+						http_responce = std::move(_http_header);
+					}
 				}
+				break;
+			}
+			case NOT_FOUND: {
+				bad_request = "<h2>Something went wrong, 404 File Not Found!</h2>";
+				std::string _http_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
+				http_responce = std::move(_http_header);
+				break;
+			}
+			case FORBIDDEN: {
+				bad_request = "<h2>You dont have authorization to access the requested resource, 403 Forbidden</h2>";
+				std::string _http_header = "HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
+				http_responce = std::move(_http_header);
+				break;
+			}
+			default: {
+				bad_request = "<h2>Something went wrong, 404 File Not Found!</h2>";
+				_http_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
+				http_responce = std::move(_http_header);
+				break;
 			}
 		}
-
-		if(_http_status == NOT_FOUND){
-			std::string bad_request = "<h2>Something went wrong, 404 File Not Found!</h2>";
-			std::string _http_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
-			http_responce = std::move(_http_header);
-		}
-		write(client_fd, http_responce.c_str(), http_responce.length());
-		http_responce = ""; 
+	write(client_fd, http_responce.c_str(), http_responce.length());
+	http_responce = ""; 
 	}
 }
 
-int Socket::inetv4::stream_sock::stream_accpect(){
+int Socket::inetv4::stream_sock::stream_accept() {
 
 	int listen_ret = listen(_sock_fd, _backlog);
 	err_check(listen_ret, "listen");
 
 	int addr_len = sizeof(_ipv4_addr);
-	while(1){
+	for(;;) {
 		std::cout << "Waiting for the Connections..." << std::endl;
 		int new_client_fd = accept(_sock_fd, (struct sockaddr*) &_sock_addr, (socklen_t*) &addr_len);
 		err_check(new_client_fd, "client socket");
@@ -199,9 +223,9 @@ int Socket::inetv4::stream_sock::stream_accpect(){
 	}
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
 	Socket::inetv4::stream_sock sock1("127.0.0.1", 8766, 1000, 10, "./html_src/index.html", "./routes.conf"); 
-	sock1.stream_accpect();
+	sock1.stream_accept();
 	
 	return 0;
 }

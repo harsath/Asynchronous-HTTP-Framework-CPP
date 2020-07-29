@@ -15,6 +15,7 @@ static inline void err_check(int returner, std::string&& err_str){
 bool rfc7230_3_2_4(const char* field_tester1){
         char* s = strdup(field_tester1);        
         bool result = std::isspace((unsigned char) s[strlen(s)-1]) ? 1 : 0;     
+	free(s);
         return result;
 }
 
@@ -41,7 +42,7 @@ static inline std::vector<std::string> client_request_line_parser(const std::str
 
 std::vector<std::pair<std::string, std::string>> header_field_value_pair(std::vector<std::string>& client_request_line, HTTP_STATUS& http_stat){
         std::vector<std::pair<std::string, std::string>> returner;
-        for(std::string& header : client_request_line){
+        for(const std::string& header : client_request_line){
                 char* original = strdup(header.c_str());
                 char* token;
                 std::pair<std::string, std::string> temp;
@@ -53,6 +54,7 @@ std::vector<std::pair<std::string, std::string>> header_field_value_pair(std::ve
                 }
                 returner.push_back(temp);
         }
+
         // Field parsing (RFC7230 section: 3.2.4)
         for(std::pair<std::string, std::string> header : returner){
                 if(rfc7230_3_2_4(header.first.c_str())){
