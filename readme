@@ -1,11 +1,11 @@
-Warning  : This project is under active developnment, and the code is unstable. Im on the progress of the building the project. Feel free to check the code and give your points (welcomed)
+Warning  : This project is under active developnment, and the code is unstable. Im on the progress of the building the project. Feel free to check the code and give your points 
 Project  : HTTP Application Server C++ Implementation (from scratch)
 RFC      : 7231
 Language : C++ (with some C UNIX Syscalls and APIs)
 
-Check out "socket_server_id_ud.cpp", it is a simple Internet Domain HTTP server (file) 
+Check out "internet_domain_http.cpp", it is a simple Internet Domain HTTP server (file) 
 
-[x] Compile "socket_server_id_ud.cpp" { g++ -Wall -O3 -std=c++17 <FILE NAME> -o server }
+[x] Compile "internet_domain_http.cpp" { g++ -Wall -O3 -std=c++17 <FILE NAME> -o server }
 	(note) By defauly, the HTTP server will be listening to port 8766
 
 [x] Add the routing configuration to the "routes.conf" for the Application server
