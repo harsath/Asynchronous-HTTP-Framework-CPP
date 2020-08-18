@@ -20,8 +20,6 @@ struct Useragent_requst_resource {
 	std::string resource_name;
 };
 
-// std::tuple<bool, std::string, std::string>
-
 
 namespace Socket::inetv4 {
 	class stream_sock {
@@ -168,20 +166,19 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 					std::string _http_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(_index_html_content.length()) + "\r\n\r\n" + _index_html_content;
 					http_responce = std::move(_http_header);
 				}else{
-					// auto [file_exists_flag, html_file_path, html_file_name] = route_path_exists(client_request_line[1]);
 					Useragent_requst_resource useragent_req_resource = route_path_exists(client_request_line[1]);
 					if(useragent_req_resource.file_exists) {
 						html_file_reader(useragent_req_resource.resource_path);
 						std::string _http_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(_html_body.length()) + "\r\n\r\n" + _html_body;
 						http_responce = std::move(_http_header);
+					}else{
+				
+					bad_request = "<h2>Something went wrong, 404 File Not Found!</h2>";
+					std::string _http_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
+					http_responce = std::move(_http_header);
+					break;
 					}
 				}
-				break;
-			}
-			case NOT_FOUND: {
-				bad_request = "<h2>Something went wrong, 404 File Not Found!</h2>";
-				std::string _http_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length:" + std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
-				http_responce = std::move(_http_header);
 				break;
 			}
 			case FORBIDDEN: {
