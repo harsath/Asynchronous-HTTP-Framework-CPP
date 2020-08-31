@@ -10,7 +10,7 @@ Language : C++ (with some C UNIX Syscalls and APIs)
 Steps:
 1. Generate the SSL CERT and Private Key 
 ```
-root@shell# openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+$ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 ```
 
 > For SSL HTTP server
@@ -18,7 +18,7 @@ root@shell# openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -da
 2. Compile the source code by linking the OpenSSL libs
 
 ```
-root@shell# g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lssl -o ssl_server
+$ g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lssl -o ssl_server
 ```
 
 > For plaintext HTTP server
@@ -26,7 +26,7 @@ root@shell# g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lc
 2. Compile the source code with following command
 
 ```
-root@shell# g++ -Wall -O3 -std=c++17 internet_domain_http.cpp -o server
+$ g++ -Wall -O3 -std=c++17 internet_domain_http.cpp -o server
 ```
 
 3. Add the routing configuration to the "routes.conf" for the Application server
@@ -40,7 +40,7 @@ Example: "./html_src/file_one.html /file_one.html"
 4. Checking the SSL Connection and performing a TLS Handshake with a OpenSSL's secure client (testing)
 
 ```
-root@shell# openssl s_client -connect localhost:4445 #By default on the source code, 4445 is the SSL port	
+$ openssl s_client -connect localhost:4445 #By default on the source code, 4445 is the SSL port	
 depth=0 C = DE, ST = Some-State, O = Internet Widgits Pty Ltd
 verify error:num=18:self signed certificate
 verify return:1
