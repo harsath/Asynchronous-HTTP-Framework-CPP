@@ -1,7 +1,10 @@
 section_2N.txt
 strtok_one.cpp
 test.c
+<<<<<<< HEAD
 build/
+=======
+>>>>>>> 065c46e207ba90bf584e8533ba3c4ac8f7e48400
 key.pem
 cert.pem
 .uild/
