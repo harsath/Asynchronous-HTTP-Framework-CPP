@@ -8,14 +8,14 @@ Language : C++ (with some C UNIX Syscalls and APIs)
 ```
 
 Steps:
-1. Generate the SSL CERT and Private Key 
+1. Generate a Self-signed SSL CERT and Private Key 
 ```
 $ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 ```
 
 > For SSL HTTP server
 
-2. Compile the source code by linking the OpenSSL libs
+2. Compile the source code by linking the OpenSSL crypto libs
 
 ```
 $ g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lssl -o ssl_server
@@ -29,7 +29,7 @@ $ g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lss
 $ g++ -Wall -O3 -std=c++17 internet_domain_http.cpp -o server
 ```
 
-3. Add the routing configuration to the "routes.conf" for the Application server
+3. Add the routing configuration to the "routes.conf" for the Application server (Deals with Directory traversal vulnerability by checking Useragent's resource request)
 
 ```
 Format:  <Path to Html> SPACE /<Html file name>
