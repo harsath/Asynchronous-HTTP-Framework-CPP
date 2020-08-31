@@ -1,3 +1,7 @@
 section_2N.txt
 strtok_one.cpp
 test.c
+key.pem
+cert.pem
+.uild/
+compile_commands.json

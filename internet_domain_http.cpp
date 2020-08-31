@@ -24,11 +24,11 @@ struct Useragent_requst_resource {
 namespace Socket::inetv4 {
 	class stream_sock {
 		private:
-			typedef struct {
+			struct internal_errors {
 				bool index_file_not_found = 0;
 				bool file_permission_err = 0;
 				bool html_file_not_found = 0;
-			} internal_errors;
+			};
 			
 			internal_errors _error_flags;
 			std::string _ipv4_addr;
@@ -47,7 +47,7 @@ namespace Socket::inetv4 {
 			std::vector<std::pair<std::string, std::string>> _page_routes;
 		public:
 			
-			stream_sock(std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, std::string index_file_path, std::string route_config_filepath) : _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), _backlog(backlog), _index_file_path(index_file_path) {
+			stream_sock(const std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, const std::string& index_file_path, const std::string& route_config_filepath) : _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), _backlog(backlog), _index_file_path(index_file_path) {
 
 				route_conf_parser(route_config_filepath);
 				memset(&_sock_addr, 0, sizeof(struct sockaddr_in));

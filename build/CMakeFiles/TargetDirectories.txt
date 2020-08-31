@@ -1,0 +1,3 @@
+/home/samsepi0l/cpp_code/http_fun_serv/build/CMakeFiles/rebuild_cache.dir
+/home/samsepi0l/cpp_code/http_fun_serv/build/CMakeFiles/edit_cache.dir
+/home/samsepi0l/cpp_code/http_fun_serv/build/CMakeFiles/ssl_server.dir

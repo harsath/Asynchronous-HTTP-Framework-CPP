@@ -2,14 +2,22 @@
 #include <iostream>
 #include <string.h>
 #include <vector>
+#include <openssl/err.h>
 
 enum HTTP_STATUS{ OK=200, BAD_REQUEST=400, NOT_FOUND=404, FORBIDDEN=403 };
 
-static inline void err_check(int returner, std::string&& err_str){
+static inline void err_check(int returner, const std::string& err_str){
 	if(returner < 0){
 		perror(err_str.c_str());	
 		exit(4);
 	}	
+}
+
+static inline void ssl_err_check(int returner, const std::string& err_str){
+	if(returner < 0){
+		ERR_print_errors_fp(stderr);
+		exit(EXIT_FAILURE);
+	}
 }
 
 bool rfc7230_3_2_4(const char* field_tester1){
@@ -40,7 +48,7 @@ static inline std::vector<std::string> client_request_line_parser(const std::str
 }
 
 
-std::vector<std::pair<std::string, std::string>> header_field_value_pair(std::vector<std::string>& client_request_line, HTTP_STATUS& http_stat){
+std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& client_request_line, HTTP_STATUS& http_stat){
         std::vector<std::pair<std::string, std::string>> returner;
         for(const std::string& header : client_request_line){
                 char* original = strdup(header.c_str());
