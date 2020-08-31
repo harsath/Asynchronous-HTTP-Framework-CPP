@@ -1,6 +1,5 @@
 ```
-Warning  : This project is under active developnment, and the code is unstable. 
-	   Im on the progress of completing my long TODO list for some nice features. 
+Warning  : This project is under active developnment as Im progressing through implementing the RFC. 
 	   Feel free to check the code and give your points 
 Project  : SSL HTTP Application Server C++ Implementation (from scratch)
 RFC      : 7231
