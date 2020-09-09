@@ -6,6 +6,12 @@
 
 enum HTTP_STATUS{ OK=200, BAD_REQUEST=400, NOT_FOUND=404, FORBIDDEN=403 };
 
+struct Useragent_requst_resource {
+	bool file_exists;
+	std::string resource_path;
+	std::string resource_name;
+};
+
 static inline void err_check(int returner, const std::string& err_str){
 	if(returner < 0){
 		perror(err_str.c_str());	
@@ -27,7 +33,7 @@ bool rfc7230_3_2_4(const char* field_tester1){
         return result;
 }
 
-static inline std::vector<std::string> client_request_html_split(char* value){
+static inline std::vector<std::string> client_request_html_split(const char* value){
         char* original = strdup(value);
         char* strings;
         std::vector<std::string> returner;
@@ -35,6 +41,13 @@ static inline std::vector<std::string> client_request_html_split(char* value){
                 returner.push_back(strings);
         }
         return returner;
+}
+
+static inline std::string client_body_split(const char* client_request){
+	std::string client_request_str{client_request};
+	std::string::size_type index = client_request_str.find("\r\n\r\n") + 4;
+	std::string returner = client_request_str.substr(index);
+	return returner;
 }
 
 static inline std::vector<std::string> client_request_line_parser(const std::string& request_line){

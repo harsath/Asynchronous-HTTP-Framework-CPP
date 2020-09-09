@@ -13,17 +13,18 @@
 #include "./unix_domain.h"
 #include "./helper_functions.cpp"
 #include <vector>
+#include <unordered_map>
 
-struct Useragent_requst_resource {
-	bool file_exists;
-	std::string resource_path;
-	std::string resource_name;
+struct Post_keyvalue{
+	std::string key;
+	std::string value;
 };
 
-
+class stream_sock_test;
 namespace Socket::inetv4 {
 	class stream_sock {
 		private:
+			friend class ::stream_sock_test;
 			struct internal_errors {
 				bool index_file_not_found = 0;
 				bool file_permission_err = 0;
@@ -45,9 +46,13 @@ namespace Socket::inetv4 {
 			std::string _index_file_path;
 			std::string _index_html_content;
 			std::vector<std::pair<std::string, std::string>> _page_routes;
+			std::unordered_map<std::string, std::string> _post_request_print; // { Post_print_Endpoint, Responce_Text }
+			std::unordered_map<std::string, std::string> _post_endpoint; // <Post_endpoint, Post_print_endpoints>
+			std::unordered_map<std::string, std::vector<Post_keyvalue>> _key_value_post; // <Post_endpoint, Key=>value>
 		public:
-			
-			stream_sock(const std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, const std::string& index_file_path, const std::string& route_config_filepath) : _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), _backlog(backlog), _index_file_path(index_file_path) {
+			stream_sock(const std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, const std::string& index_file_path, 
+				    const std::string& route_config_filepath) : _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), 
+				    _backlog(backlog), _index_file_path(index_file_path) {
 
 				route_conf_parser(route_config_filepath);
 				memset(&_sock_addr, 0, sizeof(struct sockaddr_in));
@@ -66,11 +71,43 @@ namespace Socket::inetv4 {
 			void index_file_reader();
 			void html_file_reader(std::string& html_body);
 			void route_conf_parser(std::string conf_file_path);
+			void create_post_endpoint(std::string&& post_endpoint, std::string&& print_endpoint,bool is_form_urlencoded, std::vector<Post_keyvalue>& useragent_post_form_parse);
+			void x_www_form_urlencoded_parset(std::string& useragent_body, const std::string& endpoint_route);
 			// DS : <Exists in conf file, HTML file name, Path to file>
 			Useragent_requst_resource route_path_exists(std::string client_request_html);
 
 	};
 } // End namespace Socket::inetv4
+
+// Create and listen on the endpoint for parsing the POST data
+// TODO:
+// 	create_post_endpoint()
+// 		create endpoints (fill in the structs)
+
+
+void Socket::inetv4::stream_sock::x_www_form_urlencoded_parset(std::string& useragent_body, const std::string& endpoint_route){
+	// Split the & first and iterate over each of such splits and tokenize the key and value
+	// Sample: one=value_one&two=value_two
+	char* token_amp;
+	char* useragent_body_original = strdup(useragent_body.c_str());
+	while((token_amp = strtok_r(useragent_body_original, "&", &useragent_body_original))){
+		char* token_equals;
+		Post_keyvalue tmp_value;	
+		
+		if((token_equals = strtok_r(token_amp, "=", &token_amp))){
+			tmp_value.key = token_equals;
+			if((token_equals = strtok_r(token_amp, "=", &token_amp))){
+				tmp_value.value = token_equals;
+			}
+		}
+		_key_value_post[endpoint_route].push_back(tmp_value);
+	}
+}
+
+void Socket::inetv4::stream_sock::create_post_endpoint(std::string&& post_endpoint, std::string&& print_endpoint, bool is_form_urlencoded, 
+							std::vector<Post_keyvalue> &useragent_post_form_parse){
+	this->_post_endpoint.emplace(std::move(post_endpoint), std::move(print_endpoint));
+}
 
 // Check the user agent requested HTML's path  config file
 Useragent_requst_resource Socket::inetv4::stream_sock::route_path_exists(std::string client_request_html) {
@@ -85,7 +122,7 @@ Useragent_requst_resource Socket::inetv4::stream_sock::route_path_exists(std::st
 		}
 	}
 	if(!flag) {
-		_http_status = NOT_FOUND;
+		this->_http_status = NOT_FOUND;
 	}
 
 	return {flag, path_html, html_filename};
@@ -106,7 +143,7 @@ void Socket::inetv4::stream_sock::route_conf_parser(std::string conf_file_path) 
 					temp_pusher.second = token;
 				}
 			}
-			_page_routes.push_back(temp_pusher);
+			this->_page_routes.push_back(temp_pusher);
 		}				
 	}else{
 		std::cout << "Cannot open the configuration file\n";
@@ -116,15 +153,15 @@ void Socket::inetv4::stream_sock::route_conf_parser(std::string conf_file_path) 
 
 // Index.html parser
 void Socket::inetv4::stream_sock::index_file_reader() {
-	_index_html_content = ""; 
+	this->_index_html_content = ""; 
 	std::ifstream index_page(_index_file_path);	
 	if(index_page.is_open()) {
 		std::string html_line;
 		while(std::getline(index_page, html_line)) {
-			_index_html_content += html_line;
+			this->_index_html_content += html_line;
 		}
 	}else{
-		_error_flags.index_file_not_found = 1;		
+		this->_error_flags.index_file_not_found = 1;		
 	}
 }
 
@@ -194,8 +231,18 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 				break;
 			}
 		}
-	write(client_fd, http_responce.c_str(), http_responce.length());
-	http_responce = ""; 
+		write(client_fd, http_responce.c_str(), http_responce.length());
+		http_responce = ""; 
+		// TODO:
+		// 	Check if the useragent's given endpoint exists on the entry
+		// 	If so, call the parse subrotine and fillin the object's internal data structure (_post_endpoint)
+		//	Fill the _post_request_print;
+		//	And think about the logic when the user is requesting the responce value using GET
+	}else if(client_request_line[0] == "POST"){ // Parsed result structure: std::vector<std::pair<std::string, std::string>> for the key-value pair in HTML body
+		// responce: 201 Created
+		std::string post_client_request_body = client_body_split(client_request);					
+		x_www_form_urlencoded_parset(post_client_request_body, client_request_line[1]);
+		// if(client_request_line[1] == )
 	}
 }
 
@@ -220,11 +267,14 @@ int Socket::inetv4::stream_sock::stream_accept() {
 	}
 }
 
-int main(int argc, char* argv[]) {
-	Socket::inetv4::stream_sock sock1("127.0.0.1", 8766, 1000, 10, "./html_src/index.html", "./routes.conf"); 
-	sock1.stream_accept();
-	
-	return 0;
-}
+// int main(int argc, char* argv[]) {
+// 	std::vector<std::pair<std::string, std::string>> post_form_data_parsed;
+// 	Socket::inetv4::stream_sock sock1("127.0.0.1", 8766, 1000, 10, "./html_src/index.html", "./routes.conf"); 
+// 	//			   endpoint, Content-Type, Location, &parsed_data
+// 	sock1.create_post_endpoint("/poster", "/poster_print", true, post_form_data_parsed);
+// 	sock1.stream_accept();
+//
+// 	return 0;
+// }
 
 
