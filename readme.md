@@ -58,7 +58,7 @@ GET / HTTP/1.1
 (get the contents of index.html, If everything works, Congress!)
 ```
 
-TODO (Activly working):
+#### TODO (Activly working):
 	- [] POST support for plain-text HTTP (application/x-www-form-urlencoded parser)
 	- [] POST support for SSL server
 	- [] Logging support
