@@ -25,7 +25,7 @@ $ g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lss
 2. Compile the source code with following command
 
 ```
-$ g++ -Wall -O3 -std=c++17 internet_domain_http.cpp -o server
+$ g++ -Wall -O3 -std=c++2a main.cpp -o server
 ```
 
 3. Add the routing configuration to the "routes.conf" for the Application server (Deals with Directory traversal vulnerability by checking Useragent's resource request)
@@ -59,7 +59,7 @@ GET / HTTP/1.1
 ```
 
 #### TODO (Activly working):
-	- [] POST support for plain-text HTTP (application/x-www-form-urlencoded parser)
+	- [] POST support for plain-text HTTP (application/x-www-form-urlencoded parser) and Non-blocking socket
 	- [] POST support for SSL server
 	- [] Logging support
 	- [] JSON REST API support via decoupled SSL HTTP server implementation

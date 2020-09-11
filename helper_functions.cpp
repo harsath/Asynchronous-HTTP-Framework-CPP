@@ -4,7 +4,7 @@
 #include <vector>
 #include <openssl/err.h>
 
-enum HTTP_STATUS{ OK=200, BAD_REQUEST=400, NOT_FOUND=404, FORBIDDEN=403 };
+enum HTTP_STATUS{ OK=200, BAD_REQUEST=400, NOT_FOUND=404, FORBIDDEN=403, NOT_ACCEPTABLE=406 };
 
 struct Useragent_requst_resource {
 	bool file_exists;
@@ -60,6 +60,20 @@ static inline std::vector<std::string> client_request_line_parser(const std::str
 	return returner;
 }
 
+static inline std::vector<std::string> split_client_header_from_body(std::string client_request){
+	std::string::size_type index = client_request.find("\r\n\r\n");
+	std::string returner = client_request.substr(0, index);
+	std::string::size_type index_new = returner.find("\r\n") + 2;
+	std::string returner_new = returner.substr(index_new);
+
+	char* orignal_string = strdup(returner_new.c_str());
+	char* token;
+	std::vector<std::string> return_vector;
+	while((token = strtok_r(orignal_string, "\r\n", &orignal_string))){
+		return_vector.emplace_back(token);	
+	}
+	return return_vector;
+}
 
 std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& client_request_line, HTTP_STATUS& http_stat){
         std::vector<std::pair<std::string, std::string>> returner;
@@ -67,9 +81,9 @@ std::vector<std::pair<std::string, std::string>> header_field_value_pair(const s
                 char* original = strdup(header.c_str());
                 char* token;
                 std::pair<std::string, std::string> temp;
-                if((token = strtok_r(original, ":", &original))){
+                if((token = strtok_r(original, ": ", &original))){
                         temp.first = token;
-                        if((token = strtok_r(original, ":", &original))){
+                        if((token = strtok_r(original, ": ", &original))){
                                 temp.second = token;
                         }
                 }

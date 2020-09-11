@@ -39,7 +39,7 @@ namespace Socket::inetv4 {
 			int _backlog;
 			struct sockaddr_in _sock_addr;
 			std::string _read_buffer;
-			constexpr static std::size_t _c_read_buff_size = 100;
+			constexpr static std::size_t _c_read_buff_size = 2048;
 			char _client_read_buffer[_c_read_buff_size];
 			HTTP_STATUS _http_status;
 			std::string _html_body; // Other HTML Page constents
@@ -79,12 +79,6 @@ namespace Socket::inetv4 {
 	};
 } // End namespace Socket::inetv4
 
-// Create and listen on the endpoint for parsing the POST data
-// TODO:
-// 	create_post_endpoint()
-// 		create endpoints (fill in the structs)
-
-
 void Socket::inetv4::stream_sock::x_www_form_urlencoded_parset(std::string& useragent_body, const std::string& endpoint_route){
 	// Split the & first and iterate over each of such splits and tokenize the key and value
 	// Sample: one=value_one&two=value_two
@@ -104,8 +98,7 @@ void Socket::inetv4::stream_sock::x_www_form_urlencoded_parset(std::string& user
 	}
 }
 
-void Socket::inetv4::stream_sock::create_post_endpoint(std::string&& post_endpoint, std::string&& print_endpoint, bool is_form_urlencoded, 
-							std::vector<Post_keyvalue> &useragent_post_form_parse){
+void Socket::inetv4::stream_sock::create_post_endpoint(std::string&& post_endpoint, std::string&& print_endpoint, bool is_form_urlencoded, std::vector<Post_keyvalue> &useragent_post_form_parse){
 	this->_post_endpoint.emplace(std::move(post_endpoint), std::move(print_endpoint));
 }
 
@@ -184,9 +177,10 @@ void Socket::inetv4::stream_sock::html_file_reader(std::string& file_path) {
 void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_request, int& client_fd, std::string& http_responce) {
 	std::vector<std::string> client_request_http = client_request_html_split(client_request);
 	std::vector<std::string> client_request_line = client_request_line_parser(client_request_http[0]);
+	std::vector<std::string> client_headers = split_client_header_from_body(client_request);
 	_http_status = OK;
 	
-	std::vector<std::pair<std::string, std::string>> client_header_field_value_pair = header_field_value_pair(client_request_line, _http_status);
+	std::vector<std::pair<std::string, std::string>> client_header_pair = header_field_value_pair(client_headers, _http_status);
 
 	if(client_request_line[0] == "GET") {
 		std::string _http_header, bad_request;
@@ -233,16 +227,28 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 		}
 		write(client_fd, http_responce.c_str(), http_responce.length());
 		http_responce = ""; 
-		// TODO:
-		// 	Check if the useragent's given endpoint exists on the entry
-		// 	If so, call the parse subrotine and fillin the object's internal data structure (_post_endpoint)
-		//	Fill the _post_request_print;
-		//	And think about the logic when the user is requesting the responce value using GET
+
 	}else if(client_request_line[0] == "POST"){ // Parsed result structure: std::vector<std::pair<std::string, std::string>> for the key-value pair in HTML body
 		// responce: 201 Created
 		std::string post_client_request_body = client_body_split(client_request);					
-		x_www_form_urlencoded_parset(post_client_request_body, client_request_line[1]);
-		// if(client_request_line[1] == )
+		if(_post_endpoint.contains(client_request_line[1])){ // checking if the endpoint exists
+			std::pair<std::string, std::string> targer = std::make_pair("Content-Type", "application/x-www-form-urlencoded");
+
+			auto iter_handler = std::find_if(client_header_pair.begin(), client_header_pair.end(), [&](const std::pair<std::string, std::string>& _capture){
+					if(_capture.first == "Content-Type" && _capture.second == "application/x-www-form-urlencoded"){ return true; } else { return false; }
+					}); // Checking for the right content type on POST which is supported by the parser
+
+			if(iter_handler != std::end(client_header_pair)){
+				x_www_form_urlencoded_parset(post_client_request_body, client_request_line[1]);
+				std::string created_responce_payload = "Request has been successfully parsed and resource has been created";
+				http_responce = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(created_responce_payload.length()) + "\r\n\r\n" + created_responce_payload;
+			}else{
+				std::string not_acc = "Content-Type is not suooprted by the server, please request in application/x-www-form-urlencoded Content-Type";
+				http_responce = "HTTP/1.1 406 Not Acceptable\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(not_acc.length()) + "\r\n\r\n" + not_acc;
+			}
+
+			write(client_fd, http_responce.c_str(), http_responce.length());
+		}
 	}
 }
 
@@ -266,15 +272,3 @@ int Socket::inetv4::stream_sock::stream_accept() {
 		close(new_client_fd);
 	}
 }
-
-// int main(int argc, char* argv[]) {
-// 	std::vector<std::pair<std::string, std::string>> post_form_data_parsed;
-// 	Socket::inetv4::stream_sock sock1("127.0.0.1", 8766, 1000, 10, "./html_src/index.html", "./routes.conf"); 
-// 	//			   endpoint, Content-Type, Location, &parsed_data
-// 	sock1.create_post_endpoint("/poster", "/poster_print", true, post_form_data_parsed);
-// 	sock1.stream_accept();
-//
-// 	return 0;
-// }
-
-
