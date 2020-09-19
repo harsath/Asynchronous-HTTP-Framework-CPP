@@ -18,13 +18,6 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
-struct Useragent_requst_resource {
-    bool file_exists;
-    std::string resource_path;
-    std::string resource_name;
-};
-
-
 namespace Socket::inetv4 {
     class stream_sock {
     private:
@@ -277,7 +270,7 @@ int main(int argc, char* argv[]) {
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
 
-	Socket::inetv4::stream_sock ssl_sock("127.0.0.1", 4445, 1000, 10, "./html_src/index.html", "./routes.conf", "./cert.pem", "key.pem");
+	Socket::inetv4::stream_sock ssl_sock("127.0.0.1", 4445, 1000, 10, "./html_src/index.html", "./routes.conf", "./cert.pem", "./key.pem");
 	ssl_sock.ssl_stream_accept();
 
 
