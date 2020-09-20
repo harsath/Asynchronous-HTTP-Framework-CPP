@@ -36,7 +36,7 @@ void private_member_initilization_checks(){
 
 	std::vector<std::string> client_req_line = client_request_line_parser(client_request_http[0]);
 	ASSERT_EQ(sock_global._post_endpoint["/foo_endpoint"], "/foo_print", "[8] Socket constructor std::unordered_map fill check");
-	ASSERT_EQ(BOOL(sock_global._post_endpoint.contains(client_req_line[1])), "true", "[9] Post endpoint std::unordered_map bool chck");
+	ASSERT_EQ(sock_global._post_endpoint.contains(client_req_line[1]), true, "[9] Post endpoint std::unordered_map bool chck");
 	HTTP_STATUS http_stat = OK;
 	std::vector<std::string> _test = {"Content-Type: text/html", "Content-Length: 1024", "Server: gws"};
 
@@ -51,7 +51,7 @@ void private_member_initilization_checks(){
 	if(iterator_handle != std::end(client_header_field_pair)){
 		ASSERT_EQ(targer.second, iterator_handle->second, "[10a] Content-Type: text/html exists check");
 	}else{
-		ASSERT_EQ(BOOL(false), "true", "[10b] Content-Type iterator does not exists, else.");
+		ASSERT_EQ(false, true, "[10b] Content-Type iterator does not exists, else.");
 		print(client_header_field_pair[0].first);
 	}
 
