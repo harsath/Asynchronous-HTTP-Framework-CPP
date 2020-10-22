@@ -1,5 +1,5 @@
 ```
-Warning  : This project is under active developnment as Im progressing through implementing the RFC. 
+Warning  : This project is partially finished as Im progressing through implementing the RFC.
 	   Feel free to check the code and give your points 
 Project  : SSL HTTP Application Server C++ Implementation (from scratch)
 RFC      : 7231
@@ -58,7 +58,7 @@ GET / HTTP/1.1
 (get the contents of index.html, If everything works, Congress!)
 ```
 
-#### TODO (Activly working):
+#### TODO ( working):
 	- [] POST support for plain-text HTTP (application/x-www-form-urlencoded parser) and Non-blocking socket
 	- [] POST support for SSL server
 	- [] Logging support
