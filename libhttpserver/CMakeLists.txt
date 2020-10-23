@@ -19,40 +19,34 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 # OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-cmake_minimum_required(VERSION 3.10)
 
-project(
-	server 
-	VERSION "0.0.1" 
-	DESCRIPTION "SSL Internet Domain HTTP Server"
-	LANGUAGES CXX
+set(LIB_BIN_NAME libhttp)
+
+set(
+	SRC_LIB_FILES
+	./helper_functions.hpp
+	./internet_domain_http.hpp
+	./SSL_selfsigned_internet_domain_http.hpp)
+
+add_library(
+	${LIB_BIN_NAME} 
+	STATIC ${SRC_LIB_FILES})
+
+set_target_properties(
+	${LIB_BIN_NAME}
+	PROPERTIES LINKER_LANGUAGE CXX
 	)
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 
-set(EXEC_FILES ./main.cpp)
-
-enable_testing()
-
-add_subdirectory(./libhttpserver)
-include_directories(./libhttpserver)
-add_subdirectory(./test)
-
-add_executable(
-	${PROJECT_NAME}
-	${EXEC_FILES}
-	)
+find_package(OpenSSL REQUIRED)
 
 target_link_libraries(
-	${PROJECT_NAME}
-	libhttp
-	)
+	${LIB_BIN_NAME} OpenSSL::Crypto)
+
+target_link_libraries(
+	${LIB_BIN_NAME} OpenSSL::SSL)
 
 target_compile_options(
-	${PROJECT_NAME}
-	PRIVATE
-	-Wall -O3
-	)
+	${LIB_BIN_NAME} 
+	PRIVATE -g -fsanitize=address)

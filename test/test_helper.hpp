@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstddef>
 #include <iostream>
 #include <typeinfo>
@@ -12,6 +14,7 @@ template<typename T>
 inline void print(T arg){
 	std::cout << arg << std::endl;
 }
+
 template<typename T, typename... Targs>
 inline void print(T arg, Targs... args){
 	print(arg);

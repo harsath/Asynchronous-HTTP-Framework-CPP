@@ -1,5 +1,5 @@
-#include "../internet_domain_http.cpp"
-#include "./test_helper.cpp"
+#include "internet_domain_http.hpp"
+#include "test_helper.hpp"
 #include <cstdlib>
 
 
@@ -49,9 +49,9 @@ void private_member_initilization_checks(){
 			});
 
 	if(iterator_handle != std::end(client_header_field_pair)){
-		ASSERT_EQ(targer.second, iterator_handle->second, "[10a] Content-Type: text/html exists check");
+		ASSERT_EQ(targer.second, iterator_handle->second, "[10(if)] Content-Type: text/html exists check");
 	}else{
-		ASSERT_EQ(false, true, "[10b] Content-Type iterator does not exists, else.");
+		ASSERT_EQ(false, true, "[10(else)] Content-Type iterator does not exists, else.");
 		print(client_header_field_pair[0].first);
 	}
 
