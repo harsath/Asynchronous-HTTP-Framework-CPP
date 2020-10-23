@@ -58,10 +58,4 @@ GET / HTTP/1.1
 (get the contents of index.html, If everything works, Congress!)
 ```
 
-#### TODO ( working):
-	- [] POST support for plain-text HTTP (application/x-www-form-urlencoded parser) and Non-blocking socket
-	- [] POST support for SSL server
-	- [] Logging support
-	- [] JSON REST API support via decoupled SSL HTTP server implementation
-
 sidenote: You might see the name "sapi01" on some files, Its just my another github account. It is me ;)
