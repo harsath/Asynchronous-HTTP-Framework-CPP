@@ -285,17 +285,3 @@ int Socket::inetv4::stream_sock::ssl_stream_accept() {
         close(new_client_fd);
     }
 }
-
-int main(int argc, char* argv[]) {
-	SSL_load_error_strings();
-	OpenSSL_add_ssl_algorithms();
-
-	Socket::inetv4::stream_sock ssl_sock("127.0.0.1", 4445, 1000, 10, "./html_src/index.html", "./routes.conf", "./cert.pem", "./key.pem");
-	ssl_sock.ssl_stream_accept();
-
-
-	return 0;
-
-}
-
-
