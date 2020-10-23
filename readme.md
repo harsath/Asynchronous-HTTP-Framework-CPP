@@ -1,7 +1,10 @@
+### SSL HTTP Application Server C++ Implementation
+[![Build Status](https://travis-ci.org/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231.svg?branch=master)](https://travis-ci.org/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)    ![GitHub](https://img.shields.io/github/license/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)
+
 ```
 Warning  : This project is partially finished as Im progressing through implementing the RFC.
-	   Feel free to check the code and give your points 
-Project  : SSL HTTP Application Server C++ Implementation (from scratch)
+	   Feel free to check the code and give your points
+Project  : C++ SSL HTTP Application Server & Parser Implementation (from scratch)
 RFC      : 7231
 Language : C++ (with some C UNIX Syscalls and APIs)
 ```
@@ -24,13 +27,13 @@ $ g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lss
 
 2. Compile the source code with following command
 
-	1. Without CMake
+	* Without CMake
 	```
 	$ g++ -Wall -O3 -std=c++2a main.cpp -o server 
 	```
-	2. With CMake
+	* With CMake
 	```
-	$ (mkdir build && cd build && cmake .. && make) # Now, the binaries will be compiled and built.
+	$ (mkdir build && cd build && cmake .. && make) #Now, the binaries will be compiled and built.
 	```
 
 3. Add the routing configuration to the "routes.conf" for the Application server (Deals with Directory traversal vulnerability by checking Useragent's resource request)
