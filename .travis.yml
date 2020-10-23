@@ -1,0 +1,7 @@
+compiler: clang
+dist: bionic
+language: cpp
+
+script:
+        - cmake . || exit
+        - make || exit
