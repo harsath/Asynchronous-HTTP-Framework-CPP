@@ -24,9 +24,14 @@ $ g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lss
 
 2. Compile the source code with following command
 
-```
-$ g++ -Wall -O3 -std=c++2a main.cpp -o server
-```
+	1. Without CMake
+	```
+	$ g++ -Wall -O3 -std=c++2a main.cpp -o server 
+	```
+	2. With CMake
+	```
+	$ (mkdir build && cd build && cmake .. && make) # Now, the binaries will be compiled and built.
+	```
 
 3. Add the routing configuration to the "routes.conf" for the Application server (Deals with Directory traversal vulnerability by checking Useragent's resource request)
 
