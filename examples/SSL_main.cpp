@@ -23,12 +23,15 @@
 #include <vector>
 #include <iostream>
 
-int main(int argc, char* argv[]) {
+auto main(int argc, const char*const argv[]) -> int {
+ 	std::vector<Post_keyvalue> post_form_data_parsed;
 	SSL_load_error_strings();
 	OpenSSL_add_ssl_algorithms();
 
 	// Make sure to generate a x509 type CERT pass the SSL CERT and Key here
-	Socket::inetv4::stream_sock ssl_sock("127.0.0.1", 4445, 1000, 10, "../configs/html_src/index.html", "../configs/routes.conf", "./cert.pem", "./key.pem");
+	Socket::inetv4::stream_sock ssl_sock("127.0.0.1", 4445, 1000, 10, "./configs/html_src/index.html", "./configs/routes.conf", "./cert.pem", "./key.pem");
+//			   endpoint, Content-Type, Location, &parsed_data
+	ssl_sock.create_post_endpoint("/poster", "/poster_print", true, post_form_data_parsed);
 	ssl_sock.ssl_stream_accept();
 
 	return 0;

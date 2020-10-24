@@ -83,7 +83,7 @@ namespace Socket::inetv4 {
 				_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
 				err_check(_sock_fd, "socket");
 
-				int bind_ret = bind(_sock_fd, (struct sockaddr*) &_sock_addr, sizeof(struct sockaddr_in));
+				int bind_ret = bind(_sock_fd, reinterpret_cast<struct sockaddr*>(&_sock_addr), sizeof(struct sockaddr_in));
 				err_check(bind_ret, "bind");
 			} 
 			int stream_accept();
@@ -116,7 +116,11 @@ void Socket::inetv4::stream_sock::x_www_form_urlencoded_parset(std::string& user
 				tmp_value.value = token_equals;
 			}
 		}
+<<<<<<< HEAD
 		this->_key_value_post[post_endpoint].emplace_back(std::move(tmp_value));
+=======
+		this->_key_value_post[endpoint_route].push_back(tmp_value);
+>>>>>>> POST support for SSL HTTP server(x-www-form)
 	}
 }
 
@@ -317,7 +321,7 @@ int Socket::inetv4::stream_sock::stream_accept() {
 	int addr_len = sizeof(_ipv4_addr);
 	for(;;) {
 		std::cout << "Waiting for the Connections..." << std::endl;
-		int new_client_fd = accept(_sock_fd, (struct sockaddr*) &_sock_addr, (socklen_t*) &addr_len);
+		int new_client_fd = accept(_sock_fd, reinterpret_cast<struct sockaddr*>(&_sock_addr), (socklen_t*) &addr_len);
 		err_check(new_client_fd, "client socket");
 		
 		int read_len = read(new_client_fd, _client_read_buffer, _c_read_buff_size);
