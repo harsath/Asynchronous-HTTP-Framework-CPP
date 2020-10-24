@@ -1,4 +1,4 @@
-### Plain-Text HTTP server GET & POST request and reponce
+### Plain-Text HTTP server GET & POST request and response
 
 After you build the source code, you will find `server` binary. Copy the `configs` directory onto build folder and run the server
 
@@ -24,7 +24,7 @@ After you build the source code, you will find `server` binary. Copy the `config
 	```
 	Here we go
 
-#### POST from cURL user-agent
+#### POST from cURL user-agent:
 1. First, run the server `$ ./server`
 2. Now, lets see POST example from cURL (x-www-form-urlencoded parser)
 	```

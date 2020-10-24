@@ -116,11 +116,7 @@ void Socket::inetv4::stream_sock::x_www_form_urlencoded_parset(std::string& user
 				tmp_value.value = token_equals;
 			}
 		}
-<<<<<<< HEAD
 		this->_key_value_post[post_endpoint].emplace_back(std::move(tmp_value));
-=======
-		this->_key_value_post[endpoint_route].push_back(tmp_value);
->>>>>>> POST support for SSL HTTP server(x-www-form)
 	}
 }
 
