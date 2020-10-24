@@ -1,6 +1,10 @@
 matrix:
   include:
-    # works on Precise and Trusty
+    - os: osx
+      osx_image: xcode8
+      env:
+            - MATRIX_EVAL="brew install gcc && CC=gcc-9 && CXX=g++-9"
+
     - os: linux
       addons:
         apt:
