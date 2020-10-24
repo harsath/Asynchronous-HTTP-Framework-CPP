@@ -22,5 +22,5 @@ before_install:
 language: cpp
 
 script:
-        - cmake . || exit
+        - cmake -DCMAKE_CXX_COMPILER="$(which g++-9)" . || exit
         - make || exit
