@@ -10,3 +10,4 @@ cert.pem
 .uild/
 compile_commands.json
 foo.cpp
+.clangd/

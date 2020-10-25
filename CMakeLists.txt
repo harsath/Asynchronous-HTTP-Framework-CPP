@@ -40,6 +40,7 @@ enable_testing()
 add_subdirectory(./libhttpserver)
 include_directories(./libhttpserver)
 add_subdirectory(./test)
+add_subdirectory(./vendor/json)
 
 add_executable(
 	${PROJECT_NAME}
