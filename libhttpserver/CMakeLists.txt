@@ -37,15 +37,17 @@ set_target_properties(
 	PROPERTIES LINKER_LANGUAGE CXX
 	)
 
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(
-	${LIB_BIN_NAME} OpenSSL::Crypto)
-
-target_link_libraries(
-	${LIB_BIN_NAME} OpenSSL::SSL)
+	${LIB_BIN_NAME} OpenSSL::Crypto
+	OpenSSL::SSL
+	nlohmann_json::nlohmann_json
+	)
 
 target_compile_options(
 	${LIB_BIN_NAME} 
