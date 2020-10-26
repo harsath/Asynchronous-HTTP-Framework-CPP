@@ -1,7 +1,8 @@
 This directory contains 3rd-party software.
 	[1] JSON:
 		JSON parser lib for Modern C++
-		Commit Hash: fd7a9f600712b2724463e9f7f703878ade676d6e
+		Commit Hash: db78ac1d7716f56fc9f1b030b715f872f93964e4
 		License type: MIT
 		Project URL: https://github.com/nlohmann/json/
-		Copyright: Copyright (c) 2013-2019 Niels Lohmann <http://nlohmann.me>
+		Copyright: (c) 2013-2019 Niels Lohmann <http://nlohmann.me>
+		Release date: 2020-08-06

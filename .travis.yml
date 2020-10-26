@@ -17,5 +17,4 @@ before_install:
 language: cpp
 
 script:
-        - cmake . || exit
-        - make || exit
+        - chmod +x ./CI-scripts/build_run_tests_CI.sh && bash ./CI-scripts/build_run_tests_CI.sh
