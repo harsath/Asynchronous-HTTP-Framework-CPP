@@ -22,6 +22,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <typeinfo>
 #include <type_traits>
@@ -56,6 +57,7 @@ inline void ASSERT_EQ(const T1& value_one, const T2& value_two, const std::strin
 		_ok_cout += 1;
 	}else{
 		std::cout << RED << "[ FAILED ] -> " << RESET << print_console << " " << "Value returned: " << value_one << "\n";
+		exit(EXIT_FAILURE);
 		_fail_count += 1;
 	}
 }
@@ -67,6 +69,7 @@ inline void ASSERT_EQ<bool>(const bool& value_one, const bool& value_two, const 
 		_ok_cout += 1;
 	}else{
 		std::cout << RED << "[ FAILED ] -> " << RESET << print_console << " " << "Value returned: " << value_one << "\n";
+		exit(EXIT_FAILURE);
 		_fail_count += 1;
 	}
 }
