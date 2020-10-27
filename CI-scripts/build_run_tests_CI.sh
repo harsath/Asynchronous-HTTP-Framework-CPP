@@ -3,6 +3,7 @@ set -e
 set -u
 ROUTES_CONFIG_FILE=$PWD/configs/routes.conf
 TEST_BINARY_NAME="server_test"
+GTEST_BINARY_NAME="server_test_two"
 if [[ -f ${ROUTES_CONFIG_FILE} ]]; then
 	mkdir build && cd build
 	cmake .. && make
@@ -10,7 +11,7 @@ if [[ -f ${ROUTES_CONFIG_FILE} ]]; then
 	if [[ ${DIRECTORY_BASE} == "build" ]]; then
 		cp ../configs/routes.conf ./test && cd test
 		if [[ -f ${TEST_BINARY_NAME} ]]; then
-			./$TEST_BINARY_NAME
+			./$TEST_BINARY_NAME && ./$GTEST_BINARY_NAME
 		else
 			echo -e "[ERROR] No binary found to test\n"
 			exit 1

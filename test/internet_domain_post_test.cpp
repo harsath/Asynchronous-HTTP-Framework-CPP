@@ -19,6 +19,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+// This test is for checking the private member(s) of HTTP implementation object(s)
 #include "internet_domain_http.hpp"
 #include "test_helper.hpp"
 #include <cstdlib>

@@ -34,6 +34,10 @@
 #include "helper_functions.hpp"
 #include <vector>
 #include <unordered_map>
+#include <functional>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 struct Post_keyvalue{
 	std::string key;
@@ -60,7 +64,7 @@ namespace Socket::inetv4 {
 			struct sockaddr_in _sock_addr;
 			std::string _read_buffer;
 			constexpr static std::size_t _c_read_buff_size = 2048;
-			char _client_read_buffer[_c_read_buff_size];
+			char* _client_read_buffer = reinterpret_cast<char*>(new char[_buffer_size]);
 			HTTP_STATUS _http_status;
 			std::string _html_body; // Other HTML Page constents
 			std::string _index_file_path;
@@ -69,10 +73,12 @@ namespace Socket::inetv4 {
 			std::unordered_map<std::string, std::string> _post_request_print; // { Post_print_Endpoint, Responce_Text }
 			std::unordered_map<std::string, std::string> _post_endpoint; // <Post_endpoint, Post_print_endpoints>
 			std::unordered_map<std::string, std::vector<Post_keyvalue>> _key_value_post; // <Post_endpoint, Key=>value> for x_www_form_urlencoded_parset
+			std::function<std::string(const std::string&)> _call_back_function;
 		public:
 			stream_sock(const std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, const std::string& index_file_path, 
-				    const std::string& route_config_filepath) : _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), 
-				    _backlog(backlog), _index_file_path(index_file_path) {
+				    const std::string& route_config_filepath, std::function<std::string(const std::string&)>&& call_back_function = nullptr) :
+				    _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), 
+				    _backlog(backlog), _index_file_path(index_file_path), _call_back_function(std::move(call_back_function)) {
 
 				route_conf_parser(route_config_filepath);
 				memset(&_sock_addr, 0, sizeof(struct sockaddr_in));
@@ -96,6 +102,7 @@ namespace Socket::inetv4 {
 			void x_www_form_urlencoded_parset(std::string& useragent_body, const std::string& endpoint_route);
 			// DS : <Exists in conf file, HTML file name, Path to file>
 			Useragent_requst_resource route_path_exists(std::string client_request_html);
+			~stream_sock();
 
 	};
 } // End namespace Socket::inetv4
@@ -124,6 +131,10 @@ void Socket::inetv4::stream_sock::create_post_endpoint(std::string&& post_endpoi
 							bool is_form_urlencoded, std::vector<Post_keyvalue> &useragent_post_form_parse){
 	this->_post_endpoint.emplace(std::move(post_endpoint), print_endpoint);
 	this->_post_request_print.emplace(std::move(print_endpoint), ""); // length 0 indicates, it has not been filled yet
+}
+
+Socket::inetv4::stream_sock::~stream_sock(){
+	delete[] _client_read_buffer;
 }
 
 // Check the user agent requested HTML's path  config file
@@ -273,30 +284,40 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 
 	}else if(client_request_line[0] == "POST"){ // Parsed result structure: std::vector<std::pair<std::string, std::string>> for the key-value pair in HTML body
 		// responce: 201 Created
-		std::string post_client_request_body = client_body_split(client_request);					
+		std::string post_client_request_body = client_body_split(client_request);				
 
 		if(_post_endpoint.contains(client_request_line[1])){ // checking if the endpoint exists
 			std::pair<std::string, std::string> targer = std::make_pair("Content-Type", "application/x-www-form-urlencoded");
 
 			auto iter_handler = std::find_if(client_header_pair.begin(), client_header_pair.end(), 
 							[&](const std::pair<std::string, std::string>& _capture){
-								if(_capture.first == "Content-Type" && 
-										_capture.second == "application/x-www-form-urlencoded"){ return true; } else { return false; }
+								if(_capture.first == "Content-Type")
+								{ return true; } else { return false; }
 							}); // Checking for the right content type on POST which is supported by the parser
 
-			if(iter_handler != std::end(client_header_pair)){
+			if(iter_handler != std::end(client_header_pair) && iter_handler->second == "application/x-www-form-urlencoded"){ //handler for URLENCODED type
 				x_www_form_urlencoded_parset(post_client_request_body, client_request_line[1]);
 				std::string tmp_responce = "";
 				for(const Post_keyvalue& key_val : _key_value_post[client_request_line[1]]){
 					tmp_responce += key_val.key + " => " + key_val.value + "\n";
 				} 
 				_post_request_print[_post_endpoint[client_request_line[1]]] = std::move(tmp_responce);
-				std::string created_responce_payload = "Request has been successfully parsed and resource has been created";
-				http_responce = "HTTP/1.1 201 Created\r\nLocation: " + _post_endpoint[client_request_line[1]] + "\r\n" + 
-					"Content-Type: text/plain\r\nContent-Length: " + std::to_string(created_responce_payload.length()) + 
-					"\r\n\r\n" + created_responce_payload;
+				if(_call_back_function){ //Checking if client needs a custom responce/computation
+					std::string tmp_responce_body = _call_back_function(post_client_request_body);
+					http_responce = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: " 
+							+ std::to_string(tmp_responce_body.length()) + "\r\n\r\n" + std::move(tmp_responce_body);
+				}else{
+					std::string created_responce_payload = "Request has been successfully parsed and resource has been created";
+					http_responce = "HTTP/1.1 201 Created\r\nLocation: " + _post_endpoint[client_request_line[1]] + "\r\n" + 
+						"Content-Type: text/plain\r\nContent-Length: " + std::to_string(created_responce_payload.length()) + 
+						"\r\n\r\n" + created_responce_payload;
+				}
+			}else if(iter_handler != std::end(client_header_pair) && iter_handler->second == "application/json"){ //handler for JSON content type
+					auto json_request_body = json::parse(post_client_request_body);	
+					std::cout << json_request_body << std::endl;
+					// std::cout << "Length: " << post_client_request_body.length() << std::endl;
 			}else{
-				std::string not_acc = "Content-Type is not suooprted by the server, please request in application/x-www-form-urlencoded Content-Type";
+				std::string not_acc = "Content-Type is not supported by the server, please request in application/x-www-form-urlencoded Content-Type";
 				http_responce = "HTTP/1.1 406 Not Acceptable\r\nContent-Type: text/plain\r\nContent-Length: " + 
 					std::to_string(not_acc.length()) + "\r\n\r\n" + not_acc;
 			}
