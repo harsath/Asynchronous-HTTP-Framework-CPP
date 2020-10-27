@@ -64,7 +64,7 @@ namespace Socket::inetv4 {
 			struct sockaddr_in _sock_addr;
 			std::string _read_buffer;
 			constexpr static std::size_t _c_read_buff_size = 2048;
-			char _client_read_buffer[_c_read_buff_size];
+			char* _client_read_buffer = reinterpret_cast<char*>(new char[_buffer_size]);
 			HTTP_STATUS _http_status;
 			std::string _html_body; // Other HTML Page constents
 			std::string _index_file_path;
@@ -102,6 +102,7 @@ namespace Socket::inetv4 {
 			void x_www_form_urlencoded_parset(std::string& useragent_body, const std::string& endpoint_route);
 			// DS : <Exists in conf file, HTML file name, Path to file>
 			Useragent_requst_resource route_path_exists(std::string client_request_html);
+			~stream_sock();
 
 	};
 } // End namespace Socket::inetv4
@@ -130,6 +131,10 @@ void Socket::inetv4::stream_sock::create_post_endpoint(std::string&& post_endpoi
 							bool is_form_urlencoded, std::vector<Post_keyvalue> &useragent_post_form_parse){
 	this->_post_endpoint.emplace(std::move(post_endpoint), print_endpoint);
 	this->_post_request_print.emplace(std::move(print_endpoint), ""); // length 0 indicates, it has not been filled yet
+}
+
+Socket::inetv4::stream_sock::~stream_sock(){
+	delete[] _client_read_buffer;
 }
 
 // Check the user agent requested HTML's path  config file
@@ -308,9 +313,9 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 						"\r\n\r\n" + created_responce_payload;
 				}
 			}else if(iter_handler != std::end(client_header_pair) && iter_handler->second == "application/json"){ //handler for JSON content type
-					// auto json_request_body = json::parse(R"({'Hello':123})");	
-					std::cout << post_client_request_body << std::endl;
-					std::cout << "Length: " << post_client_request_body.length() << std::endl;
+					auto json_request_body = json::parse(post_client_request_body);	
+					std::cout << json_request_body << std::endl;
+					// std::cout << "Length: " << post_client_request_body.length() << std::endl;
 			}else{
 				std::string not_acc = "Content-Type is not supported by the server, please request in application/x-www-form-urlencoded Content-Type";
 				http_responce = "HTTP/1.1 406 Not Acceptable\r\nContent-Type: text/plain\r\nContent-Length: " + 
@@ -338,8 +343,6 @@ int Socket::inetv4::stream_sock::stream_accept() {
 		
 		int read_len = read(new_client_fd, _client_read_buffer, _c_read_buff_size);
 		err_check(read_len, "client read");
-
-		std::cout << "READ but : " << strlen(_client_read_buffer) << std::endl;
 
 		origin_server_side_responce(_client_read_buffer, new_client_fd, _html_body);
 		
