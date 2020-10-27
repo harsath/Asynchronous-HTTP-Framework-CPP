@@ -31,7 +31,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+include_directories(../libhttpserver)
+
 set(EXEC_NAME server_test)
+
+set(GTEST_EXEC_NAME server_test_two)
 
 set(
 	SOURCE_FILES
@@ -39,14 +43,30 @@ set(
 	./internet_domain_post_test.cpp
 	)
 
+set(
+	GTEST_SOURCE_FILES
+	./processing_functions_test.cpp
+	)
+
 add_executable(
 	${EXEC_NAME}
 	${SOURCE_FILES}
 	)
 
+add_executable(
+	${GTEST_EXEC_NAME}
+	${GTEST_SOURCE_FILES}
+	)
+
 target_link_libraries(
 	${EXEC_NAME}
 	libhttp
+	)
+
+target_link_libraries(
+	${GTEST_EXEC_NAME}
+	pthread
+	gtest_main
 	)
 
 add_test(

@@ -33,6 +33,21 @@ struct Useragent_requst_resource {
 	std::string resource_name;
 };
 
+static inline auto preprocess_raw_json(const std::string& in_json, std::size_t in_length) -> std::string {
+	char* out_preprocessed = reinterpret_cast<char*>(malloc(sizeof(char)*in_length));
+	char* in_json_copy = strdup(in_json.c_str());
+	while(*in_json_copy != '\0'){
+		if(*(in_json_copy + 1) != '"'){
+			*out_preprocessed++ = '\\';
+			*out_preprocessed = *in_json_copy++;
+		}else{
+			*out_preprocessed++ = *in_json_copy++;
+		}
+	}
+	*out_preprocessed = '\0';
+	return out_preprocessed;
+}
+
 static inline void err_check(int returner, const std::string& err_str){
 	if(returner < 0){
 		perror(err_str.c_str());	
@@ -48,10 +63,18 @@ static inline void ssl_err_check(int returner, const std::string& err_str){
 }
 
 bool rfc7230_3_2_4(const char* field_tester1){
-        char* s = strdup(field_tester1);        
-        bool result = std::isspace((unsigned char) s[strlen(s)-1]) ? 1 : 0;     
-	free(s);
-        return result;
+	std::string test_field{field_tester1};
+	std::size_t index_colon = test_field.find(":");
+	if(index_colon != std::string::npos){
+		char char_before_colon = test_field[index_colon-1];
+		if(char_before_colon == ' '){
+			return false;
+		}else{
+			return true;
+		}
+	}else{
+		return false;
+	}
 }
 
 static inline std::vector<std::string> client_request_html_split(const char* value){
@@ -116,8 +139,8 @@ std::vector<std::pair<std::string, std::string>> header_field_value_pair(const s
         }
 
         // Field parsing (RFC7230 section: 3.2.4)
-        for(std::pair<std::string, std::string> header : returner){
-                if(rfc7230_3_2_4(header.first.c_str())){
+        for(const std::string& header : client_request_line){
+                if(!rfc7230_3_2_4(header.c_str())){
                         http_stat = BAD_REQUEST;
                 }
         }
