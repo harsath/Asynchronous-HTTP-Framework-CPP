@@ -51,6 +51,7 @@ add_executable(
 target_link_libraries(
 	${PROJECT_NAME}
 	libhttp
+	nlohmann_json::nlohmann_json
 	)
 
 target_compile_options(

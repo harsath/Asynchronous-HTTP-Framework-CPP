@@ -73,12 +73,12 @@ namespace Socket::inetv4 {
 			std::unordered_map<std::string, std::string> _post_request_print; // { Post_print_Endpoint, Responce_Text }
 			std::unordered_map<std::string, std::string> _post_endpoint; // <Post_endpoint, Post_print_endpoints>
 			std::unordered_map<std::string, std::vector<Post_keyvalue>> _key_value_post; // <Post_endpoint, Key=>value> for x_www_form_urlencoded_parset
-			std::function<std::string(const std::string&)> _call_back_function;
+			std::unordered_map<std::string, std::function<std::string(const std::string&)>> _endpoint_call_back_functions;
 		public:
 			stream_sock(const std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, const std::string& index_file_path, 
 				    const std::string& route_config_filepath, std::function<std::string(const std::string&)>&& call_back_function = nullptr) :
 				    _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), 
-				    _backlog(backlog), _index_file_path(index_file_path), _call_back_function(std::move(call_back_function)) {
+				    _backlog(backlog), _index_file_path(index_file_path){
 
 				route_conf_parser(route_config_filepath);
 				memset(&_sock_addr, 0, sizeof(struct sockaddr_in));
@@ -98,7 +98,8 @@ namespace Socket::inetv4 {
 			void html_file_reader(std::string& html_body);
 			void route_conf_parser(std::string conf_file_path);
 			void create_post_endpoint(std::string&& post_endpoint, std::string&& print_endpoint, 
-							bool is_form_urlencoded, std::vector<Post_keyvalue>& useragent_post_form_parse);
+							bool is_form_urlencoded, std::vector<Post_keyvalue>& useragent_post_form_parse,
+							std::function<std::string(const std::string&)>&&);
 			void x_www_form_urlencoded_parset(std::string& useragent_body, const std::string& endpoint_route);
 			// DS : <Exists in conf file, HTML file name, Path to file>
 			Useragent_requst_resource route_path_exists(std::string client_request_html);
@@ -128,9 +129,15 @@ void Socket::inetv4::stream_sock::x_www_form_urlencoded_parset(std::string& user
 }
 
 void Socket::inetv4::stream_sock::create_post_endpoint(std::string&& post_endpoint, std::string&& print_endpoint, 
-							bool is_form_urlencoded, std::vector<Post_keyvalue> &useragent_post_form_parse){
-	this->_post_endpoint.emplace(std::move(post_endpoint), print_endpoint);
+							bool is_form_urlencoded, std::vector<Post_keyvalue> &useragent_post_form_parse,
+							std::function<std::string(const std::string&)>&& call_back_function = nullptr){
+	this->_post_endpoint.emplace(post_endpoint, print_endpoint);
 	this->_post_request_print.emplace(std::move(print_endpoint), ""); // length 0 indicates, it has not been filled yet
+	if(call_back_function){
+		this->_endpoint_call_back_functions.emplace(std::move(post_endpoint), std::move(call_back_function));
+	}else{
+		this->_endpoint_call_back_functions.emplace(std::move(post_endpoint), nullptr);
+	}
 }
 
 Socket::inetv4::stream_sock::~stream_sock(){
@@ -302,10 +309,10 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 					tmp_responce += key_val.key + " => " + key_val.value + "\n";
 				} 
 				_post_request_print[_post_endpoint[client_request_line[1]]] = std::move(tmp_responce);
-				if(_call_back_function){ //Checking if client needs a custom responce/computation
-					std::string tmp_responce_body = _call_back_function(post_client_request_body);
+				if(_endpoint_call_back_functions[client_request_line[1]] != nullptr){ //Checking if client needs a custom responce/computation
+					std::string tmp_responce = _endpoint_call_back_functions[client_request_line[1]](post_client_request_body);
 					http_responce = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: " 
-							+ std::to_string(tmp_responce_body.length()) + "\r\n\r\n" + std::move(tmp_responce_body);
+							+ std::to_string(tmp_responce.length()) + "\r\n\r\n" + std::move(tmp_responce);
 				}else{
 					std::string created_responce_payload = "Request has been successfully parsed and resource has been created";
 					http_responce = "HTTP/1.1 201 Created\r\nLocation: " + _post_endpoint[client_request_line[1]] + "\r\n" + 
@@ -313,9 +320,16 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 						"\r\n\r\n" + created_responce_payload;
 				}
 			}else if(iter_handler != std::end(client_header_pair) && iter_handler->second == "application/json"){ //handler for JSON content type
-					auto json_request_body = json::parse(post_client_request_body);	
-					std::cout << json_request_body << std::endl;
-					// std::cout << "Length: " << post_client_request_body.length() << std::endl;
+				if(_endpoint_call_back_functions[client_request_line[1]] != nullptr){
+					std::string tmp_responce = _endpoint_call_back_functions[client_request_line[1]](post_client_request_body);
+					http_responce = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: " 
+							+ std::to_string(tmp_responce.length()) + "\r\n\r\n" + std::move(tmp_responce);
+				}else{
+					std::string tmp_responce = "JSON has been parsed by the origin server";
+					http_responce = "HTTP/1.1 201 Created\r\nLocation: " + _post_endpoint[client_request_line[1]] + "\r\n" + 
+						"Content-Type: text/plain\r\nContent-Length: " + std::to_string(tmp_responce.length()) + 
+						"\r\n\r\n" + std::move(tmp_responce);
+				}
 			}else{
 				std::string not_acc = "Content-Type is not supported by the server, please request in application/x-www-form-urlencoded Content-Type";
 				http_responce = "HTTP/1.1 406 Not Acceptable\r\nContent-Type: text/plain\r\nContent-Length: " + 
