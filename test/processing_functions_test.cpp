@@ -47,8 +47,4 @@ TEST(ProcessingFunctionsTest, client_request_html_split){
 	ASSERT_EQ(output_request_split.at(3), "X-Powered-By: libhttpserver");
 }
 
-TEST(ProcessingFunctionsTest, preprocess_raw_json){
-
-}
-
 }
