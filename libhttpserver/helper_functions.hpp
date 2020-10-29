@@ -33,21 +33,6 @@ struct Useragent_requst_resource {
 	std::string resource_name;
 };
 
-static inline auto preprocess_raw_json(const std::string& in_json, std::size_t in_length) -> std::string {
-	char* out_preprocessed = reinterpret_cast<char*>(malloc(sizeof(char)*in_length));
-	char* in_json_copy = strdup(in_json.c_str());
-	while(*in_json_copy != '\0'){
-		if(*(in_json_copy + 1) != '"'){
-			*out_preprocessed++ = '\\';
-			*out_preprocessed = *in_json_copy++;
-		}else{
-			*out_preprocessed++ = *in_json_copy++;
-		}
-	}
-	*out_preprocessed = '\0';
-	return out_preprocessed;
-}
-
 static inline void err_check(int returner, const std::string& err_str){
 	if(returner < 0){
 		perror(err_str.c_str());	
