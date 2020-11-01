@@ -75,9 +75,9 @@ namespace Socket::inetv4 {
 			std::unordered_map<std::string, std::vector<Post_keyvalue>> _key_value_post; // <Post_endpoint, Key=>value> for x_www_form_urlencoded_parset
 			std::unordered_map<std::string, std::function<std::string(const std::string&)>> _endpoint_call_back_functions;
 		public:
-			stream_sock(const std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, const std::string& index_file_path, 
-				    const std::string& route_config_filepath, std::function<std::string(const std::string&)>&& call_back_function = nullptr) :
-				    _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), 
+			explicit stream_sock(const std::string ipv4_addr, std::uint16_t port, std::size_t buffer_size, int backlog, const std::string& index_file_path, 
+				    const std::string& route_config_filepath, std::function<std::string(const std::string&)>&& call_back_function = nullptr) 
+				:   _ipv4_addr(ipv4_addr), _port(port), _buffer_size(buffer_size), 
 				    _backlog(backlog), _index_file_path(index_file_path){
 
 				route_conf_parser(route_config_filepath);
