@@ -42,6 +42,7 @@ include_directories(./libhttpserver)
 add_subdirectory(./test)
 add_subdirectory(./vendor/json)
 add_subdirectory(./vendor/googletest)
+add_subdirectory(./vendor/fmt)
 
 add_executable(
 	${PROJECT_NAME}
