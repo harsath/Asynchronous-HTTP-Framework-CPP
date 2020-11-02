@@ -22,8 +22,14 @@
 #pragma once
 #include <iostream>
 #include <string.h>
+#include <unordered_map>
 #include <vector>
 #include <openssl/err.h>
+
+struct Post_keyvalue{
+	std::string key;
+	std::string value;
+};
 
 enum HTTP_STATUS{ OK=200, BAD_REQUEST=400, NOT_FOUND=404, FORBIDDEN=403, NOT_ACCEPTABLE=406 };
 
@@ -44,6 +50,30 @@ static inline void ssl_err_check(int returner, const std::string& err_str){
 	if(returner < 0){
 		ERR_print_errors_fp(stderr);
 		exit(EXIT_FAILURE);
+	}
+}
+
+// application/x-www-form-urlencoded Request Body parser
+static inline void x_www_form_urlencoded_parset(std::string& useragent_body,
+									const std::string& post_endpoint, 
+									std::unordered_map<std::string, std::vector<Post_keyvalue>>& key_value_post
+									){
+	// Split the & first and iterate over each of such splits and tokenize the key and value
+	// Sample: one=value_one&two=value_two
+	char* token_amp;
+	char* useragent_body_original = strdup(useragent_body.c_str());
+	char* state_two;
+	char* state_one;
+	for(token_amp = strtok_r(useragent_body_original, "&", &state_one); token_amp != NULL; token_amp = strtok_r(NULL, "&", &state_one)){
+		char* token_equals;
+		Post_keyvalue tmp_value;	
+		if((token_equals = strtok_r(token_amp, "=", &state_two))){
+			tmp_value.key = token_equals;
+			if((token_equals = strtok_r(NULL, "=", &state_two))){
+				tmp_value.value = token_equals;
+			}
+		}
+		key_value_post[post_endpoint].emplace_back(std::move(tmp_value));
 	}
 }
 

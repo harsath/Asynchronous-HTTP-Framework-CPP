@@ -36,7 +36,7 @@ public:
 void x_www_form_urlencoded_parset_test(){
 	sock_global.create_post_endpoint("/foo_endpoint", "/foo_print", true, post_form_data_parsed);	
 	std::string client_post_sample = client_body_split(client_post_sample_full.c_str());
-	sock_global.x_www_form_urlencoded_parset(client_post_sample, "/foo_endpoint");				
+	x_www_form_urlencoded_parset(client_post_sample, "/foo_endpoint", sock_global._key_value_post);				
 
 	ASSERT_EQ(client_post_sample, "key_one=value_one&key_two=value_two", "[1] Client body/payload split check");
 	ASSERT_EQ(sock_global._key_value_post["/foo_endpoint"][0].key, "key_one", "[2] endpoint parsed key check");
@@ -54,7 +54,7 @@ void private_member_initilization_checks(){
 
 	std::string client_post_sample_full = "POST /foo_endpoint HTTP/1.1\r\nContent-Type: application/x-www-form-urlencoded\r\nHost: www.foobar.com\r\n\r\nkey_one=value_one&key_two=value_two";
 	std::string client_post_sample = client_body_split(client_post_sample_full.c_str());
-	sock_global.x_www_form_urlencoded_parset(client_post_sample, "/foo_endpoint");				
+	x_www_form_urlencoded_parset(client_post_sample, "/foo_endpoint", sock_global._key_value_post);				
 
 	std::vector<std::string> client_req_line = client_request_line_parser(client_request_http[0]);
 	ASSERT_EQ(sock_global._post_endpoint["/foo_endpoint"], "/foo_print", "[8] Socket constructor std::unordered_map fill check");

@@ -67,6 +67,7 @@ target_link_libraries(
 	${GTEST_EXEC_NAME}
 	pthread
 	gtest_main
+	nlohmann_json::nlohmann_json
 	)
 
 add_test(

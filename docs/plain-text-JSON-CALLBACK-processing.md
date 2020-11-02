@@ -5,7 +5,7 @@ A client may define a callback function which will be called when a JSON data hi
 * First, define the callback computation you wanted to perform in a function with signacture `std::string my_callback_function(const std::string&);` The implementation allows gives you a very easy interface to define the computation you wanna perform on the Origin-server and the return value as the Responce Body from the server. Basic example is provided below.
 
 * Here is an example of a callback function for a JSON POST endpoint on the server.
-Warning: The user is completely responsible for handling the invalid requests from the user.
+Warning: The user is completely responsible for handling the invalid requests from the user. In the case of any exception by the parser, the server will return the "Invalid" responce(in this case as shown below)
 
 ```c++
 std::string call_back(const std::string& user_agent_request_body){
@@ -17,8 +17,8 @@ std::string call_back(const std::string& user_agent_request_body){
 		std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
 		return returner;
 	}catch(const std::exception& e){
-		std::cout << "Exception: " << e.what() << std::endl;
-		exit(EXIT_FAILURE);
+		std::string returner_exception = "Invalid POST data to JSON endpoint";
+		return returner_exception;
 	}
 }
 ```
@@ -53,12 +53,12 @@ Above you can see the `Responce Body` from the origin-server is the `std::string
 * Example of passing a callback function inside a POST endpoint creation. Again a complete example is shown in `main.cpp`
 
 ```
-			//	endpoint,   Content-Type,   Location,  &parsed_data,      callback function
-http_server.create_post_endpoint("/poster", "/poster_print", true, post_form_data_parsed, call_back);
+			//	endpoint,   print endpoint,  Location,  &parsed_data,      callback function
+http_server.create_post_endpoint("/poster", "/poster_print", false, post_form_data_parsed, call_back);
 ```
 
 * ***Endpoit:*** POST data endpoint.
-* ***Content-Type:*** application/json Or application/x-www-form-urlencoded in that endpoint
+* ***Print endpoint:*** Print endpoint in Location header.
 * ***Location:*** Add Location header in Responce Header? or not?
 * ***Parsed_data:*** Where to dump the parsed data from the client/user-agent's Request Body (`std::vector<Post_keyvalue>`)
 * ***Callback-Function:*** Callback function to call when parsing the Request Body from client/user-agent(Optional)
