@@ -11,8 +11,8 @@ matrix:
         - MATRIX_EVAL="CC=gcc-9 && CXX=g++-9"
 
 before_install:
-    - eval "${MATRIX_EVAL}"
-
+        - sudo apt install libcrypto++-dev/focal -y
+        - eval "${MATRIX_EVAL}"
 
 language: cpp
 
