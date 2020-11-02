@@ -6,3 +6,17 @@ This directory contains 3rd-party software.
 		Project URL: https://github.com/nlohmann/json/
 		Copyright: (c) 2013-2019 Niels Lohmann <http://nlohmann.me>
 		Release date: 2020-08-06
+	[2] Google Test:
+		Googletest is a testing framework developed by the Testing Technology team with Google
+		Commit Hash: 703bd9caab50b139428cea1aaff9974ebee5742e
+		License type: BSD 3-Clause "New" or "Revised" License
+		Project URL: https://github.com/google/googletest
+		Copyright: Copyright 2007, Google Inc.
+		Release data: 2020-10-03
+	[3] fmt:
+		{fmt} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.
+		Commit Hash: 5f7f7b954d0e958f3d94f3d906177c6a1090f079
+		License type: MIT
+		Project URL: https://github.com/fmtlib/fmt
+		Copyright: (c) 2012 - present, Victor Zverovich
+		Release data: 2020-11-02
