@@ -369,9 +369,10 @@ int Socket::inetv4::stream_sock::ssl_stream_accept() {
     int listen_ret = listen(_sock_fd, _backlog);
     err_check(listen_ret, "listen");
 
+    std::cout << "Accepting SSL connection from the peer\n";
+
     int addr_len = sizeof(_ipv4_addr);
     for(;;) {
-        std::cout << "Waiting for the Connections..." << std::endl;
         int new_client_fd = accept(_sock_fd, reinterpret_cast<struct sockaddr*>(&_sock_addr), reinterpret_cast<socklen_t*>(&addr_len));
         err_check(new_client_fd, "client socket");
 
@@ -381,7 +382,6 @@ int Socket::inetv4::stream_sock::ssl_stream_accept() {
 
 	int ssl_err = SSL_accept(ssl);
 	ssl_err_check(ssl_err, "SSL server accept");
-	std::cout << "Accepting SSL connection from the peer\n";
 	
 	ssl_err = SSL_read(ssl, _client_read_buffer, _c_read_buff_size);
 	ssl_err_check(ssl_err, "SSL read server error");
@@ -391,7 +391,7 @@ int Socket::inetv4::stream_sock::ssl_stream_accept() {
 	SSL_shutdown(ssl);
 	SSL_free(ssl);
 
-        std::cout << "Responce send through SSL to useragent" << std::endl;
+        std::cout << "Responce send through SSL to useragent\n";
         close(new_client_fd);
     }
 }

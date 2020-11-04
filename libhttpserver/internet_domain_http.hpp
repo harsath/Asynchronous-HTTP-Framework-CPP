@@ -336,7 +336,6 @@ int Socket::inetv4::stream_sock::stream_accept() {
 
 	int addr_len = sizeof(_ipv4_addr);
 	for(;;) {
-		std::cout << "Waiting for the Connections..." << std::endl;
 		int new_client_fd = accept(_sock_fd, reinterpret_cast<struct sockaddr*>(&_sock_addr), (socklen_t*) &addr_len);
 		err_check(new_client_fd, "client socket");
 		
@@ -345,7 +344,7 @@ int Socket::inetv4::stream_sock::stream_accept() {
 
 		origin_server_side_responce(_client_read_buffer, new_client_fd, _html_body);
 		
-		std::cout << "Msg sent" << std::endl;
+		std::cout << "Msg sent\n";
 		close(new_client_fd);
 	}
 }
