@@ -52,7 +52,6 @@ namespace Socket::inetv4 {
 				bool html_file_not_found = 0;
 			};
 			std::unique_ptr<LoggerHelper> _access_log = LoggerFactory::MakeLog("access.log", LoggerFactory::Log::Access);
-			std::unique_ptr<LoggerHelper> _error_log = LoggerFactory::MakeLog("error.log", LoggerFactory::Log::Error);
 			const char* _current_date = get_today_date_full();
 			LogMessage _log_msg_helper;
 			std::unordered_map<std::string, bool> _flags;
@@ -276,6 +275,8 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 				break;
 			}
 		}
+		this->_log_msg_helper.log_message = "Successfully served the user-agent";
+		write_log_to_file(this->_access_log, this->_log_msg_helper);
 		send(client_fd, http_responce.c_str(), http_responce.length(), 0);
 		http_responce = ""; 
 
@@ -340,6 +341,8 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 				std::string not_acc = "Invalid POST endpoint";
 				http_responce = "HTTP/1.1 406 Not Acceptable\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(not_acc.length()) + "\r\n\r\n" + not_acc;
 		}
+		this->_log_msg_helper.log_message = "Successfully served the user-agent";
+		write_log_to_file(this->_access_log, this->_log_msg_helper);
 		send(client_fd, http_responce.c_str(), http_responce.length(), 0);
 	}
 }

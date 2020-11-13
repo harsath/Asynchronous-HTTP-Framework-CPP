@@ -19,16 +19,12 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
 
-struct LogMessage{
-	std::string client_ip, date, resource, useragent, log_message;
-	~LogMessage() = default;
-};
 
 class LoggerHelper{
 	public:

@@ -68,6 +68,7 @@ target_link_libraries(
 	pthread
 	gtest_main
 	nlohmann_json::nlohmann_json
+	fmt::fmt-header-only
 	)
 
 add_test(

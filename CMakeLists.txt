@@ -53,6 +53,7 @@ target_link_libraries(
 	${PROJECT_NAME}
 	libhttp
 	nlohmann_json::nlohmann_json
+	fmt::fmt-header-only
 	)
 
 target_compile_options(
