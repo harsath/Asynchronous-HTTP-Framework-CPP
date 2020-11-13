@@ -25,6 +25,7 @@
 #include <unordered_map>
 #include <vector>
 #include <openssl/err.h>
+#include <chrono>
 
 struct Post_keyvalue{
 	std::string key;
@@ -135,6 +136,12 @@ static inline std::vector<std::string> split_client_header_from_body(std::string
 		return_vector.emplace_back(token);	
 	}
 	return return_vector;
+}
+
+static inline char* get_today_date_full(){
+	auto start = std::chrono::system_clock::now(); 
+	std::time_t end_time = std::chrono::system_clock::to_time_t(start);
+	return std::ctime(&end_time);
 }
 
 std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& client_request_line, HTTP_STATUS& http_stat){

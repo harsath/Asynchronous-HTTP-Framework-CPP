@@ -32,6 +32,7 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #include "helper_functions.hpp"
+#include "logger_helpers.hpp"
 #include <vector>
 #include <unordered_map>
 #include <functional>
@@ -50,6 +51,10 @@ namespace Socket::inetv4 {
 				bool file_permission_err = 0;
 				bool html_file_not_found = 0;
 			};
+			std::unique_ptr<LoggerHelper> _access_log = LoggerFactory::MakeLog("access.log", LoggerFactory::Log::Access);
+			std::unique_ptr<LoggerHelper> _error_log = LoggerFactory::MakeLog("error.log", LoggerFactory::Log::Error);
+			const char* _current_date = get_today_date_full();
+			LogMessage _log_msg_helper;
 			std::unordered_map<std::string, bool> _flags;
 			internal_errors _error_flags;
 			std::string _ipv4_addr;
@@ -57,7 +62,7 @@ namespace Socket::inetv4 {
 			std::size_t _buffer_size;
 			int _sock_fd;
 			int _backlog;
-			struct sockaddr_in _sock_addr;
+			struct sockaddr_in _sock_addr, _client_addr;
 			std::string _read_buffer;
 			constexpr static std::size_t _c_read_buff_size = 2048;
 			char* _client_read_buffer = reinterpret_cast<char*>(new char[_buffer_size]);
@@ -87,6 +92,8 @@ namespace Socket::inetv4 {
 
 				int bind_ret = bind(_sock_fd, reinterpret_cast<struct sockaddr*>(&_sock_addr), sizeof(struct sockaddr_in));
 				err_check(bind_ret, "bind");
+
+				this->_log_msg_helper.date = this->_current_date;
 			} 
 			int stream_accept();
 			void origin_server_side_responce(char* client_request, int& client_fd, std::string& http_responce);
@@ -199,6 +206,14 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 	_http_status = OK;
 	
 	std::vector<std::pair<std::string, std::string>> client_header_pair = header_field_value_pair(client_headers, _http_status);
+	std::function<bool(const std::pair<std::string, std::string>&)> user_agent_capture_fn = [](const std::pair<std::string, std::string>& values) -> bool {
+		return values.first == "User-Agent" && values.second != "";
+	};
+	auto user_agent_iter = std::find_if(std::begin(client_header_pair), std::end(client_header_pair), user_agent_capture_fn);
+	if(user_agent_iter != std::end(client_header_pair)){ this->_log_msg_helper.useragent = user_agent_iter->second; }else{ 
+		this->_log_msg_helper.useragent = "Unknown";
+	}
+	this->_log_msg_helper.resource = client_request_http[0];
 
 	if(client_request_line[0] == "GET") {
 		std::string _http_header, bad_request;
@@ -261,7 +276,7 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 				break;
 			}
 		}
-		write(client_fd, http_responce.c_str(), http_responce.length());
+		send(client_fd, http_responce.c_str(), http_responce.length(), 0);
 		http_responce = ""; 
 
 	}else if(client_request_line[0] == "POST"){ // Parsed result structure: std::vector<std::pair<std::string, std::string>> for the key-value pair in HTML body
@@ -325,7 +340,7 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 				std::string not_acc = "Invalid POST endpoint";
 				http_responce = "HTTP/1.1 406 Not Acceptable\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(not_acc.length()) + "\r\n\r\n" + not_acc;
 		}
-		write(client_fd, http_responce.c_str(), http_responce.length());
+		send(client_fd, http_responce.c_str(), http_responce.length(), 0);
 	}
 }
 
@@ -336,10 +351,12 @@ int Socket::inetv4::stream_sock::stream_accept() {
 
 	int addr_len = sizeof(_ipv4_addr);
 	for(;;) {
-		int new_client_fd = accept(_sock_fd, reinterpret_cast<struct sockaddr*>(&_sock_addr), (socklen_t*) &addr_len);
+		int new_client_fd = accept(this->_sock_fd, reinterpret_cast<struct sockaddr*>(&this->_client_addr), (socklen_t*) &addr_len);
 		err_check(new_client_fd, "client socket");
+
+		this->_log_msg_helper.client_ip = inet_ntoa(this->_client_addr.sin_addr);
 		
-		int read_len = read(new_client_fd, _client_read_buffer, _c_read_buff_size);
+		int read_len = recv(new_client_fd, _client_read_buffer, _c_read_buff_size, 0);
 		err_check(read_len, "client read");
 
 		origin_server_side_responce(_client_read_buffer, new_client_fd, _html_body);

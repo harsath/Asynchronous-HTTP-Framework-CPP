@@ -11,3 +11,4 @@ cert.pem
 compile_commands.json
 foo.cpp
 .clangd/
+./-v
