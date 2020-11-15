@@ -19,6 +19,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <cstdio>
 #include <fmt/format.h>
 #include <fstream>
 #include <functional>
@@ -53,11 +54,13 @@ class AccessContext final : public LoggerHelper{
 };
 
 void ErrorContext::log(const std::string &fmt_str) const noexcept {
-	std::fprintf(this->_error_stream, "[Access] %s\n", fmt_str.c_str());
+	std::fprintf(this->_error_stream, "[Error] %s\n", fmt_str.c_str());
+	fflush(this->_error_stream);
 }
 
 void AccessContext::log(const std::string &fmt_str) const noexcept {
-	std::fprintf(this->_access_stream, "[Error] %s\n", fmt_str.c_str());
+	std::fprintf(this->_access_stream, "[Access] %s\n", fmt_str.c_str());
+	fflush(this->_access_stream);
 }
 
 ErrorContext::ErrorContext(const std::string& file_name){

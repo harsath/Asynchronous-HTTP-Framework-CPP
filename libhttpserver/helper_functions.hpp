@@ -152,7 +152,7 @@ static inline char* get_today_date_full(){
 }
 
 template<typename T> static inline void write_log_to_file(const std::unique_ptr<T>& log_handler, const LogMessage& log_struct){
-	log_handler->log(fmt::format("{0}, {1}, {2}, {3}, {4}", log_struct.client_ip, log_struct.date, 
+	log_handler->log(fmt::format("{0} {1} {2} {3} {4}", log_struct.client_ip, log_struct.date, 
 				log_struct.resource, log_struct.useragent, log_struct.log_message));
 }
 

@@ -316,8 +316,9 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 					}
 				}
 			}else if(iter_handler != std::end(client_header_pair) && iter_handler->second == "application/json"){ //handler for JSON content type
-				if(_endpoint_call_back_functions[client_request_line[1]] != nullptr){
-					std::string tmp_responce = _endpoint_call_back_functions[client_request_line[1]](post_client_request_body);
+				if(this->_endpoint_call_back_functions[client_request_line[1]] != nullptr){
+					// TODO: create std::pair<bool, string> and check if the request is Successfully parsed or we need to return correct headers on error
+					std::string tmp_responce = this->_endpoint_call_back_functions[client_request_line[1]](post_client_request_body);
 					http_responce = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: " 
 							+ std::to_string(tmp_responce.length()) + "\r\n\r\n" + std::move(tmp_responce);
 				}else{
@@ -341,6 +342,7 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 				std::string not_acc = "Invalid POST endpoint";
 				http_responce = "HTTP/1.1 406 Not Acceptable\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(not_acc.length()) + "\r\n\r\n" + not_acc;
 		}
+
 		this->_log_msg_helper.log_message = "Successfully served the user-agent";
 		write_log_to_file(this->_access_log, this->_log_msg_helper);
 		send(client_fd, http_responce.c_str(), http_responce.length(), 0);
