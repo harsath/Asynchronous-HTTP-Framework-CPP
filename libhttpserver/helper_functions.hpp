@@ -148,7 +148,9 @@ static inline std::vector<std::string> split_client_header_from_body(std::string
 static inline char* get_today_date_full(){
 	auto start = std::chrono::system_clock::now(); 
 	std::time_t end_time = std::chrono::system_clock::to_time_t(start);
-	return std::ctime(&end_time);
+	char* time = std::ctime(&end_time);
+	time[strlen(time)-1] = '\0';
+	return time;
 }
 
 template<typename T> static inline void write_log_to_file(const std::unique_ptr<T>& log_handler, const LogMessage& log_struct){

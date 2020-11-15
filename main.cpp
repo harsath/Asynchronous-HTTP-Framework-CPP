@@ -15,6 +15,7 @@ std::string call_back(const std::string& user_agent_request_body){
 		std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
 		return returner;
 	}catch(const std::exception& e){
+		std::cout << e.what() << std::endl;
 		std::string returner_exception = "Invalid POST data to JSON endpoint";
 		return returner_exception;
 	}

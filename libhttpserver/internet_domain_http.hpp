@@ -19,6 +19,7 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <asm-generic/socket.h>
 #include <cstdio>
 #include <arpa/inet.h>
 #include <iostream>
@@ -37,6 +38,15 @@
 #include <unordered_map>
 #include <functional>
 #include <nlohmann/json.hpp>
+#include <netinet/tcp.h>
+
+#if !defined(SOL_TCP) && defined(IPPROTO_TCP)
+#define SOL_TCP IPPROTO_TCP
+#endif
+#if !defined(TCP_KEEPIDLE) && defined(TCP_KEEPALIVE)
+#define TCP_KEEPIDLE TCP_KEEPALIVE
+#endif
+
 
 using json = nlohmann::json;
 
@@ -64,7 +74,7 @@ namespace Socket::inetv4 {
 			struct sockaddr_in _sock_addr, _client_addr;
 			std::string _read_buffer;
 			constexpr static std::size_t _c_read_buff_size = 2048;
-			char* _client_read_buffer = reinterpret_cast<char*>(new char[_buffer_size]);
+			char _client_read_buffer[_c_read_buff_size + 1] = "";
 			HTTP_STATUS _http_status;
 			std::string _html_body; // Other HTML Page constents
 			std::string _index_file_path;
@@ -82,20 +92,28 @@ namespace Socket::inetv4 {
 
 				route_conf_parser(route_config_filepath);
 				memset(&_sock_addr, 0, sizeof(struct sockaddr_in));
-				_sock_addr.sin_family = AF_INET;
-				inet_pton(AF_INET, _ipv4_addr.c_str(), &_sock_addr.sin_addr);
-				_sock_addr.sin_port = htons(_port);
+				this->_sock_addr.sin_family = AF_INET;
+				inet_pton(AF_INET, this->_ipv4_addr.c_str(), &_sock_addr.sin_addr);
+				this->_sock_addr.sin_port = htons(this->_port);
 
-				_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
-				err_check(_sock_fd, "socket");
+				this->_sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+				err_check(this->_sock_fd, "socket");
 
-				int bind_ret = bind(_sock_fd, reinterpret_cast<struct sockaddr*>(&_sock_addr), sizeof(struct sockaddr_in));
+				int optval = 1;
+				int sock_opt = setsockopt(this->_sock_fd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<char*>(&optval), sizeof(optval));
+				err_check(sock_opt, "SO_REUSEADDR socket option error");
+
+				int flag = 1;
+				sock_opt = setsockopt(this->_sock_fd, SOL_TCP, TCP_NODELAY, reinterpret_cast<char*>(&flag), sizeof(flag));
+				err_check(sock_opt, "TCP_NODELAY socket option error");
+
+				int bind_ret = bind(this->_sock_fd, reinterpret_cast<struct sockaddr*>(&this->_sock_addr), sizeof(struct sockaddr_in));
 				err_check(bind_ret, "bind");
 
 				this->_log_msg_helper.date = this->_current_date;
 			} 
 			int stream_accept();
-			void origin_server_side_responce(char* client_request, int& client_fd, std::string& http_responce);
+			void origin_server_side_responce(const char* client_request, int& client_fd, std::string& http_responce);
 			void index_file_reader();
 			void html_file_reader(std::string& html_body);
 			void route_conf_parser(std::string conf_file_path);
@@ -122,7 +140,7 @@ void Socket::inetv4::stream_sock::create_post_endpoint(std::string&& post_endpoi
 }
 
 Socket::inetv4::stream_sock::~stream_sock(){
-	delete[] _client_read_buffer;
+	// delete[] _client_read_buffer;
 }
 
 // Check the user agent requested HTML's path  config file
@@ -198,12 +216,13 @@ void Socket::inetv4::stream_sock::html_file_reader(std::string& file_path) {
 
 
 // Server responc (Called everytime the client requests a resource)
-void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_request, int& client_fd, std::string& http_responce) {
+void Socket::inetv4::stream_sock::origin_server_side_responce(const char* client_request, int& client_fd, std::string& http_responce) {
 	std::vector<std::string> client_request_http = client_request_html_split(client_request);
 	std::vector<std::string> client_request_line = client_request_line_parser(client_request_http[0]);
 	std::vector<std::string> client_headers = split_client_header_from_body(client_request);
 	_http_status = OK;
 	
+	// Getting a handle to `User-Agent` pair and filling filling the Logging object
 	std::vector<std::pair<std::string, std::string>> client_header_pair = header_field_value_pair(client_headers, _http_status);
 	std::function<bool(const std::pair<std::string, std::string>&)> user_agent_capture_fn = [](const std::pair<std::string, std::string>& values) -> bool {
 		return values.first == "User-Agent" && values.second != "";
@@ -244,13 +263,12 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 					}
 				}else{
 					Useragent_requst_resource useragent_req_resource = route_path_exists(client_request_line[1]);
-					if(useragent_req_resource.file_exists) {
+					if(useragent_req_resource.file_exists){
 						html_file_reader(useragent_req_resource.resource_path);
 						std::string _http_header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length:" + 
 										std::to_string(_html_body.length()) + "\r\n\r\n" + _html_body;
 						http_responce = std::move(_http_header);
 					}else{
-				
 					bad_request = "<h2>Something went wrong, 404 File Not Found!</h2>";
 					std::string _http_header = "HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length:" + 
 									std::to_string(bad_request.length()) + "\r\n\r\n" + bad_request;
@@ -315,8 +333,8 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 								+ std::to_string(created_responce_payload.length()) + "\r\n\r\n" + created_responce_payload;
 					}
 				}
-			}else if(iter_handler != std::end(client_header_pair) && iter_handler->second == "application/json"){ //handler for JSON content type
-				if(this->_endpoint_call_back_functions[client_request_line[1]] != nullptr){
+			}else if(iter_handler != std::end(client_header_pair) && iter_handler->second == "application/json"){ // handling for JSON content type
+				if(this->_endpoint_call_back_functions[client_request_line[1]] != nullptr){ // checking if any callback fn exists on lookup table
 					// TODO: create std::pair<bool, string> and check if the request is Successfully parsed or we need to return correct headers on error
 					std::string tmp_responce = this->_endpoint_call_back_functions[client_request_line[1]](post_client_request_body);
 					http_responce = "HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nContent-Length: " 
@@ -350,21 +368,20 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(char* client_reque
 }
 
 int Socket::inetv4::stream_sock::stream_accept() {
-
-	int listen_ret = listen(_sock_fd, _backlog);
+	int listen_ret = listen(this->_sock_fd, this->_backlog);
 	err_check(listen_ret, "listen");
 
 	int addr_len = sizeof(_ipv4_addr);
 	for(;;) {
-		int new_client_fd = accept(this->_sock_fd, reinterpret_cast<struct sockaddr*>(&this->_client_addr), (socklen_t*) &addr_len);
+		int new_client_fd = accept(this->_sock_fd, reinterpret_cast<struct sockaddr*>(&this->_client_addr), reinterpret_cast<socklen_t*>(&addr_len));
 		err_check(new_client_fd, "client socket");
 
 		this->_log_msg_helper.client_ip = inet_ntoa(this->_client_addr.sin_addr);
 		
-		int read_len = recv(new_client_fd, _client_read_buffer, _c_read_buff_size, 0);
+		int read_len = recv(new_client_fd, this->_client_read_buffer, this->_c_read_buff_size, 0);
 		err_check(read_len, "client read");
 
-		origin_server_side_responce(_client_read_buffer, new_client_fd, _html_body);
+		origin_server_side_responce(this->_client_read_buffer, new_client_fd, this->_html_body);
 		
 		std::cout << "Msg sent\n";
 		close(new_client_fd);
