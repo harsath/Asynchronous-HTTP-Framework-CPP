@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include "helper_functions.hpp"
+#include <fmt/format.h>
 #include "internet_domain_http.hpp"
 
 namespace{

@@ -26,6 +26,7 @@ set(
 	SRC_LIB_FILES
 	./helper_functions.hpp
 	./internet_domain_http.hpp
+	./logger_helpers.hpp
 	./SSL_selfsigned_internet_domain_http.hpp)
 
 add_library(
@@ -47,6 +48,7 @@ target_link_libraries(
 	${LIB_BIN_NAME} OpenSSL::Crypto
 	OpenSSL::SSL
 	nlohmann_json::nlohmann_json
+	fmt::fmt-header-only
 	)
 
 target_compile_options(

@@ -23,8 +23,16 @@
 #include <iostream>
 #include <string.h>
 #include <unordered_map>
+#include <memory>
 #include <vector>
 #include <openssl/err.h>
+#include <chrono>
+#include <fmt/format.h>
+
+struct LogMessage{
+	std::string client_ip, date, resource, useragent, log_message;
+	~LogMessage() = default;
+};
 
 struct Post_keyvalue{
 	std::string key;
@@ -135,6 +143,19 @@ static inline std::vector<std::string> split_client_header_from_body(std::string
 		return_vector.emplace_back(token);	
 	}
 	return return_vector;
+}
+
+static inline char* get_today_date_full(){
+	auto start = std::chrono::system_clock::now(); 
+	std::time_t end_time = std::chrono::system_clock::to_time_t(start);
+	char* time = std::ctime(&end_time);
+	time[strlen(time)-1] = '\0';
+	return time;
+}
+
+template<typename T> static inline void write_log_to_file(const std::unique_ptr<T>& log_handler, const LogMessage& log_struct){
+	log_handler->log(fmt::format("{0} {1} {2} {3} {4}", log_struct.client_ip, log_struct.date, 
+				log_struct.resource, log_struct.useragent, log_struct.log_message));
 }
 
 std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& client_request_line, HTTP_STATUS& http_stat){
