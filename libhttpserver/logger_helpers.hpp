@@ -64,7 +64,7 @@ void AccessContext::log(const std::string &fmt_str) const noexcept {
 }
 
 ErrorContext::ErrorContext(const std::string& file_name){
-	this->_error_stream = std::fopen(file_name.c_str(), "w+");
+	this->_error_stream = std::fopen(file_name.c_str(), "a");
 }
 
 ErrorContext::~ErrorContext(){
@@ -72,7 +72,7 @@ ErrorContext::~ErrorContext(){
 }
 
 AccessContext::AccessContext(const std::string& file_name){
-	this->_access_stream = std::fopen(file_name.c_str(), "w+");
+	this->_access_stream = std::fopen(file_name.c_str(), "a");
 }
 
 AccessContext::~AccessContext(){
