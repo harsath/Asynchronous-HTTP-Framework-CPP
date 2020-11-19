@@ -12,3 +12,4 @@ compile_commands.json
 foo.cpp
 .clangd/
 ./-v
+note.txt
