@@ -22,6 +22,7 @@
 #pragma once
 #include <iostream>
 #include <string.h>
+#include <sys/cdefs.h>
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -145,6 +146,7 @@ static inline std::vector<std::string> split_client_header_from_body(std::string
 	return return_vector;
 }
 
+__attribute__((always_inline))
 static inline char* get_today_date_full(){
 	auto start = std::chrono::system_clock::now(); 
 	std::time_t end_time = std::chrono::system_clock::to_time_t(start);

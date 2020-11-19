@@ -62,7 +62,6 @@ namespace Socket::inetv4 {
 				bool html_file_not_found = 0;
 			};
 			std::unique_ptr<LoggerHelper> _access_log = LoggerFactory::MakeLog("access.log", LoggerFactory::Log::Access);
-			const char* _current_date = get_today_date_full();
 			LogMessage _log_msg_helper;
 			std::unordered_map<std::string, bool> _flags;
 			internal_errors _error_flags;
@@ -110,7 +109,6 @@ namespace Socket::inetv4 {
 				int bind_ret = bind(this->_sock_fd, reinterpret_cast<struct sockaddr*>(&this->_sock_addr), sizeof(struct sockaddr_in));
 				err_check(bind_ret, "bind");
 
-				this->_log_msg_helper.date = this->_current_date;
 			} 
 			int stream_accept();
 			void origin_server_side_responce(const char* client_request, int& client_fd, std::string& http_responce);
@@ -294,6 +292,7 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(const char* client
 			}
 		}
 		this->_log_msg_helper.log_message = "Successfully served the user-agent";
+		this->_log_msg_helper.date = ::get_today_date_full();
 		write_log_to_file(this->_access_log, this->_log_msg_helper);
 		send(client_fd, http_responce.c_str(), http_responce.length(), 0);
 		http_responce = ""; 
@@ -362,6 +361,7 @@ void Socket::inetv4::stream_sock::origin_server_side_responce(const char* client
 		}
 
 		this->_log_msg_helper.log_message = "Successfully served the user-agent";
+		this->_log_msg_helper.date = ::get_today_date_full();
 		write_log_to_file(this->_access_log, this->_log_msg_helper);
 		send(client_fd, http_responce.c_str(), http_responce.length(), 0);
 	}
