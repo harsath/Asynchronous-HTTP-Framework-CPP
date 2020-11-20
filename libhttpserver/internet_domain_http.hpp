@@ -1,24 +1,25 @@
-// libhttpserver SSL HTTP Server Implementation
-// Copyright © 2020 Harsath
+// libhttpserver ssl http server implementation
+// copyright © 2020 harsath
 //
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
+// permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "software"),
+// to deal in the software without restriction, including without limitation
 // the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
+// and/or sell copies of the software, and to permit persons to whom the
+// software is furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
+// the above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-// OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// the software is provided "as is", without warranty of any kind,
+// express or implied, including but not limited to the warranties
+// of merchantability, fitness for a particular purpose and noninfringement.
+// in no event shall the authors or copyright holders be liable for any claim,
+// damages or other liability, whether in an action of contract,
+// tort or otherwise, arising from, out of or in connection with the software
+// or the use or other dealings in the software.
 
+#pragma once
 #include <asm-generic/socket.h>
 #include <cstdio>
 #include <arpa/inet.h>
@@ -32,7 +33,8 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <netinet/in.h>
-#include "helper_functions.hpp"
+#include "HTTPHelpers.hpp"
+#include "HTTPParserRoutine.hpp"
 #include "logger_helpers.hpp"
 #include <vector>
 #include <unordered_map>
@@ -53,6 +55,7 @@ using json = nlohmann::json;
 
 class stream_sock_test;
 namespace Socket::inetv4 {
+	using HTTP::HTTPHelpers::HTTP_RESPONCE_CODE;
 	class stream_sock {
 		private:
 			friend class ::stream_sock_test;
@@ -62,8 +65,8 @@ namespace Socket::inetv4 {
 				bool html_file_not_found = 0;
 			};
 			std::unique_ptr<LoggerHelper> _access_log = LoggerFactory::MakeLog("access.log", LoggerFactory::Log::Access);
-			const char* _current_date = get_today_date_full();
-			LogMessage _log_msg_helper;
+			const char* _current_date = HTTP::HTTPHelpers::get_today_date_full();
+			HTTP::HTTPHelpers::LogMessage _log_msg_helper;
 			std::unordered_map<std::string, bool> _flags;
 			internal_errors _error_flags;
 			std::string _ipv4_addr;
@@ -75,7 +78,7 @@ namespace Socket::inetv4 {
 			std::string _read_buffer;
 			constexpr static std::size_t _c_read_buff_size = 2048;
 			char _client_read_buffer[_c_read_buff_size + 1] = "";
-			HTTP_STATUS _http_status;
+			 HTTP_RESPONCE_CODE _http_status;
 			std::string _html_body; // Other HTML Page constents
 			std::string _index_file_path;
 			std::string _index_html_content;
