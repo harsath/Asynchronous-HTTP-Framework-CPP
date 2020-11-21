@@ -35,7 +35,7 @@ namespace HTTP::HTTPParser{
 	// application/x-www-form-urlencoded Request Body parser
 	using HTTP::HTTPHelpers::Post_keyvalue;
 	using HTTP::HTTPConst::HTTP_RESPONSE_CODE;
-	static inline void x_www_form_urlencoded_parset(std::string& useragent_body,
+	inline void x_www_form_urlencoded_parset(std::string& useragent_body,
 							const std::string& post_endpoint, 
 							std::unordered_map<std::string, std::vector<Post_keyvalue>>& key_value_post
 							){
@@ -58,14 +58,15 @@ namespace HTTP::HTTPParser{
 		}
 	}
 
-	static inline std::string client_body_split(const char* client_request){
+	inline std::pair<std::string, std::string> request_split_header_body(const char* client_request){
 		std::string client_request_str{client_request};
 		std::string::size_type index = client_request_str.find("\r\n\r\n") + 4;
-		std::string returner = client_request_str.substr(index);
-		return returner;
+		std::string request_body = client_request_str.substr(index);
+		std::string request_headers = client_request_str.substr(0, client_request_str.find("\r\n\r\n"));
+		return {request_headers, request_body};
 	}
-
-	static inline std::vector<std::string> client_request_line_parser(const std::string& request_line){
+	
+	inline std::vector<std::string> client_request_line_parser(const std::string& request_line){
 		std::vector<std::string> returner;
 		char* original = strdup(request_line.c_str());
 		char* strings;
@@ -76,7 +77,7 @@ namespace HTTP::HTTPParser{
 		return returner;
 	}
 
-	static inline std::vector<std::string> split_client_header_from_body(std::string client_request){
+	inline std::vector<std::string> split_client_header_from_body(std::string client_request){
 		std::string::size_type index = client_request.find("\r\n\r\n");
 		std::string returner = client_request.substr(0, index);
 		std::string::size_type index_new = returner.find("\r\n") + 2;
@@ -92,7 +93,7 @@ namespace HTTP::HTTPParser{
 		return return_vector;
 	}
 
-	bool rfc7230_3_2_4(const char* field_tester1){
+	inline bool rfc7230_3_2_4(const char* field_tester1){
 		std::string test_field{field_tester1};
 		std::size_t index_colon = test_field.find(":");
 		if(index_colon != std::string::npos){
@@ -107,7 +108,7 @@ namespace HTTP::HTTPParser{
 		}
 	}
 
-	std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& client_request_line, HTTP_RESPONSE_CODE& http_stat){
+	inline std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& client_request_line, HTTP_RESPONSE_CODE& http_stat){
 		std::vector<std::pair<std::string, std::string>> returner;
 		for(const std::string& header : client_request_line){
 			char* original = strdup(header.c_str());
@@ -132,7 +133,7 @@ namespace HTTP::HTTPParser{
 		 return returner;
 	}
 
-	static inline std::vector<std::string> client_request_html_split(const char* value){
+	inline std::vector<std::string> client_request_html_split(const char* value){
 		char* original = strdup(value);
 		char* strings;
 		char* state;
@@ -140,6 +141,19 @@ namespace HTTP::HTTPParser{
 		for(strings = strtok_r(original, "\r\n", &state); strings != NULL; strings = strtok_r(NULL, "\r\n", &state)){
 			returner.push_back(strings);
 		}
+		free(original);
+		return returner;
+	}
+
+	inline std::string request_line_splitter(const char* client_request){
+		char* original = strdup(client_request);
+		char* strings;
+		char* state;
+		std::string returner;
+		for(strings = strtok_r(original, "\r\n", &state); strings != NULL; strings = strtok_r(NULL, "\r\n", &state)){
+			returner = strings; break;
+		}
+		free(original);
 		return returner;
 	}
 

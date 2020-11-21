@@ -24,11 +24,21 @@ set(LIB_BIN_NAME libhttp)
 
 set(
 	SRC_LIB_FILES
-	./helper_functions.hpp
-	./internet_domain_http.hpp
-	./logger_helpers.hpp
-	./SSL_selfsigned_internet_domain_http.hpp)
-
+	./HTTPHeader.hpp
+	./HTTPHeader.cpp
+	./HTTPHandler.hpp
+	./HTTPHandler.cpp
+	./HTTPHelpers.hpp
+	./HTTPAcceptor.cpp
+	./HTTPAcceptor.hpp
+	./HTTPConstants.hpp
+	./HTTPParserRoutine.hpp
+	./HTTPLogHelpers.hpp
+	./HTTPHeader.cpp
+	./HTTPHeader.hpp
+	./HTTPMessage.hpp
+	./HTTPMessage.cpp
+	)
 add_library(
 	${LIB_BIN_NAME} 
 	STATIC ${SRC_LIB_FILES})

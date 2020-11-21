@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <arpa/inet.h>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <fstream>
 #include <sys/socket.h>
@@ -38,7 +39,7 @@
 #include "HTTPHelpers.hpp"
 #include "HTTPHandler.hpp"
 #include "HTTPParserRoutine.hpp"
-#include "logger_helpers.hpp"
+#include "HTTPLogHelpers.hpp"
 #include <vector>
 #include <unordered_map>
 #include <functional>
@@ -60,33 +61,42 @@ namespace HTTP::HTTPAcceptor{
 					const std::uint16_t server_port,
 					int server_backlog,
 					HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
-					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {}
+					const std::string& path_to_root,
+					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
+					const std::string& ssl_cert = "",
+					const std::string& ssl_private_key = ""
 					) noexcept = 0;
 
 			virtual void HTTPStreamAccept() noexcept = 0;
 	};
 
-	class LinuxHTTPAcceptor final : public HTTPAcceptor{
+	class HTTPAcceptorPlainText final : public HTTPAcceptor{
 		private:
 			std::string _server_addr;
 			std::uint16_t _server_port;
 			int _server_backlog;
-			struct sockaddr_in _server_sockaddr;
+			struct sockaddr_in _server_sockaddr, _client_sockaddr;
 			int _server_sock_fd;
 			HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
 			constexpr static std::size_t _acceptor_read_buff_size = 2048;
 			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
 			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr{nullptr};
+			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext{nullptr};
 		public:
 			void HTTPStreamSock(
 					const std::string& server_addr,
 					const std::uint16_t server_port,
 					int server_backlog,
 					HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
-					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {}
+					const std::string& path_to_root,
+					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
+					const std::string& ssl_cert = "",
+					const std::string& ssl_private_key = ""
 					) noexcept override;
 			void HTTPStreamAccept() noexcept override;
-			LinuxHTTPAcceptor() = default;
+			HTTPAcceptorPlainText() = default;
 	};
+
+	// TODO: HTTPAcceptorSSL implementation
 
 } // end namespace HTTP::HTTPAcceptor

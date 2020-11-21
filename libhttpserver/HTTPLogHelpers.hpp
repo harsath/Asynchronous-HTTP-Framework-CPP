@@ -28,6 +28,12 @@
 #include <memory>
 
 namespace HTTP::LOG{
+
+	struct LogMessage{
+		std::string client_ip, date, resource, useragent, log_message;
+		~LogMessage() = default;
+	};
+
 	class LoggerHelper{
 		public:
 			virtual void log(const std::string&) const noexcept = 0;
@@ -82,7 +88,7 @@ namespace HTTP::LOG{
 
 	class LoggerFactory{
 		public:
-		enum class Log : std::uint8_t{
+		enum Log : std::uint8_t{
 			Error, Access
 		};
 		static std::unique_ptr<LoggerHelper> MakeLog(const std::string& file_name, Log log_type){

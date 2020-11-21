@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <arpa/inet.h>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <fstream>
 #include <sys/socket.h>
@@ -35,7 +36,8 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <netinet/in.h>
-#include "logger_helpers.hpp"
+#include "HTTPHelpers.hpp"
+#include "HTTPLogHelpers.hpp"
 #include <vector>
 #include <unordered_map>
 #include <functional>
@@ -54,40 +56,36 @@ namespace HTTP::HTTPHandler{
 	struct HTTPPostEndpoint{
 		std::string post_endpoint;
 		std::string post_accept_type;
-		std::string post_print_endpoint;
-		bool include_location_header;
 		std::function<std::string(const std::string&)> callback_fn{nullptr};
 	};
 
 	class HTTPHandler{
-		public:
-			virtual void HTTPConfig(const std::string& path_to_root) noexcept = 0;
-			virtual void HTTPCreateEndpoint(const HTTPPostEndpoint& post_endpoint) noexcept = 0;
-			virtual void HTTPHandleConnection(char* raw_read_buffer, std::size_t raw_read_size) = 0;
-			virtual ~HTTPHandler() = default;
-	};
-
-	class HTTPPlainServer final : public HTTPHandler{
 		private:
+			HTTP::LOG::LogMessage _log_holder;
 			std::string _path_to_routesfile;
 			std::unordered_map<std::string, std::string> _filename_and_filepath_map;
+			std::unique_ptr<HTTP::LOG::LoggerHelper> _logger = 
+				HTTP::LOG::LoggerFactory::MakeLog("HTTPAccess.log", HTTP::LOG::LoggerFactory::Access);
+			// < PostEndpoint, {Content-Type, CallBack-Function} >
+			std::unordered_map<std::string, 
+				std::pair<std::string, std::function<std::string(const std::string&)>>
+					> _post_endpoint;
 		public:
-			void HTTPConfig(const std::string& path_to_root) noexcept override;
-			void HTTPCreateEndpoint(const HTTPPostEndpoint& post_endpoint) noexcept override;
-			void HTTPHandleConnection() override;
+			explicit HTTPHandler(const std::string& path_to_root);
+			void HTTPConfig(const std::string& path_to_root) noexcept;
+			void HTTPCreateEndpoint(const HTTPPostEndpoint& post_endpoint) noexcept;
+			void HTTPHandleConnection(
+					const std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext>& _HTTPContext,
+					char* raw_read_buffer, 
+					std::size_t raw_read_size);
+			void LogSetClientIP(const std::string& client_ip) noexcept;
+			void LogSetDate(const std::string& log_date) noexcept;
+			void LogSetRequestResource(const std::string& req_resource) noexcept;
+			void LogSetUserAgent(const std::string& useragent) noexcept;
+			void LogSetLogMessage(const std::string& log_message) noexcept;
+			~HTTPHandler() = default;
 	};
 
-	class HTTPSSLServer final : public HTTPHandler{
-		public:
-			void HTTPConfig(const std::string& path_to_root) noexcept override;
-			void HTTPCreateEndpoint(const HTTPPostEndpoint& post_endpoint) noexcept override;
-			void HTTPHandleConnection() override;
-	};
-
-	class HTTPHandlerFactory{
-		public:
-		static std::unique_ptr<HTTPHandler> MakeHandler(HTTP::HTTPConst::HTTP_SERVER_TYPE serv_type);
-	};
 		
 } // end namespace HTTP::HTTPHandler
 
