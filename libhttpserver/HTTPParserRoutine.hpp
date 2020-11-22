@@ -56,6 +56,7 @@ namespace HTTP::HTTPParser{
 			}
 			key_value_post[post_endpoint].emplace_back(std::move(tmp_value));
 		}
+		free(useragent_body_original);
 	}
 
 	inline std::pair<std::string, std::string> request_split_header_body(const char* client_request){
@@ -74,10 +75,11 @@ namespace HTTP::HTTPParser{
 		for(strings = strtok_r(original, " ", &state); strings != NULL; strings = strtok_r(NULL, " ", &state)){
 			returner.push_back(strings);
 		}
+		free(original);
 		return returner;
 	}
 
-	inline std::vector<std::string> split_client_header_from_body(std::string client_request){
+	inline std::vector<std::string> split_client_header_from_body(const std::string& client_request){
 		std::string::size_type index = client_request.find("\r\n\r\n");
 		std::string returner = client_request.substr(0, index);
 		std::string::size_type index_new = returner.find("\r\n") + 2;
@@ -90,6 +92,25 @@ namespace HTTP::HTTPParser{
 		for(token = strtok_r(orignal_string, "\r\n", &state); token != NULL; token = strtok_r(NULL, "\r\n", &state)){
 			return_vector.emplace_back(token);	
 		}
+		free(orignal_string);
+		return return_vector;
+	}
+
+	inline std::vector<std::string> split_client_header_from_body(std::string&& client_request_temp){
+		std::string client_request = std::move(client_request_temp);
+		std::string::size_type index = client_request.find("\r\n\r\n");
+		std::string returner = client_request.substr(0, index);
+		std::string::size_type index_new = returner.find("\r\n") + 2;
+		std::string returner_new = returner.substr(index_new);
+
+		char* orignal_string = strdup(returner_new.c_str());
+		char* token;
+		char* state;
+		std::vector<std::string> return_vector;
+		for(token = strtok_r(orignal_string, "\r\n", &state); token != NULL; token = strtok_r(NULL, "\r\n", &state)){
+			return_vector.emplace_back(token);	
+		}
+		free(orignal_string);
 		return return_vector;
 	}
 
@@ -108,9 +129,9 @@ namespace HTTP::HTTPParser{
 		}
 	}
 
-	inline std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& client_request_line, HTTP_RESPONSE_CODE& http_stat){
+	inline std::vector<std::pair<std::string, std::string>> header_field_value_pair(const std::vector<std::string>& str_header_vector, HTTP_RESPONSE_CODE& http_stat){
 		std::vector<std::pair<std::string, std::string>> returner;
-		for(const std::string& header : client_request_line){
+		for(const std::string& header : str_header_vector){
 			char* original = strdup(header.c_str());
 			char* token;
 			std::pair<std::string, std::string> temp;
@@ -125,7 +146,7 @@ namespace HTTP::HTTPParser{
 		}
 
 		// Field parsing (RFC7230 section: 3.2.4)
-		for(const std::string& header : client_request_line){
+		for(const std::string& header : str_header_vector){
 			if(!rfc7230_3_2_4(header.c_str())){
 				http_stat = HTTP_RESPONSE_CODE::BAD_REQUEST;
 			}
@@ -133,7 +154,7 @@ namespace HTTP::HTTPParser{
 		 return returner;
 	}
 
-	inline std::vector<std::string> client_request_html_split(const char* value){
+	inline std::vector<std::string> client_request_split_lines(const char* value){
 		char* original = strdup(value);
 		char* strings;
 		char* state;
@@ -157,4 +178,4 @@ namespace HTTP::HTTPParser{
 		return returner;
 	}
 
-}
+} // end namespace HTTP::HTTPParser

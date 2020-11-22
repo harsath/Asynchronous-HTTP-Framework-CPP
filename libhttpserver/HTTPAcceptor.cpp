@@ -61,6 +61,7 @@ inline void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexce
 	int addr_len = sizeof(this->_server_addr);
 	this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
 	this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER;
+	this->_HTTPContext->HTTPResponceState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 
 	for(;;){
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
@@ -75,7 +76,7 @@ inline void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexce
 
 		this->_HTTPContext->HTTPClientFD = client_fd;
 
-		this->_http_handler_ptr->HTTPHandleConnection(this->_HTTPContext, this->_acceptor_read_buff, this->_acceptor_read_buff_size);
+		this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
 
 		HTTP::HTTPHelpers::close_connection(client_fd);
 		std::cout << "HTTP-Transaction done\n";

@@ -64,6 +64,7 @@ namespace HTTP::HTTPHandler{
 			HTTP::LOG::LogMessage _log_holder;
 			std::string _path_to_routesfile;
 			std::unordered_map<std::string, std::string> _filename_and_filepath_map;
+			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
 			std::unique_ptr<HTTP::LOG::LoggerHelper> _logger = 
 				HTTP::LOG::LoggerFactory::MakeLog("HTTPAccess.log", HTTP::LOG::LoggerFactory::Access);
 			// < PostEndpoint, {Content-Type, CallBack-Function} >
@@ -75,7 +76,7 @@ namespace HTTP::HTTPHandler{
 			void HTTPConfig(const std::string& path_to_root) noexcept;
 			void HTTPCreateEndpoint(const HTTPPostEndpoint& post_endpoint) noexcept;
 			void HTTPHandleConnection(
-					const std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext>& _HTTPContext,
+					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
 					char* raw_read_buffer, 
 					std::size_t raw_read_size);
 			void LogSetClientIP(const std::string& client_ip) noexcept;

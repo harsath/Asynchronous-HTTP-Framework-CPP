@@ -1,5 +1,8 @@
 #include "HTTPHandler.hpp"
+#include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
+#include "HTTPMessage.hpp"
+#include "HTTPParserRoutine.hpp"
 #include <memory>
 
 inline HTTP::HTTPHandler::HTTPHandler::HTTPHandler(const std::string& path_to_root){
@@ -8,10 +11,18 @@ inline HTTP::HTTPHandler::HTTPHandler::HTTPHandler(const std::string& path_to_ro
 }
 
 inline void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
-				const std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext>& _HTTPContext,
+				std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
 				char* raw_read_buffer, 
 				std::size_t raw_read_size){
-	std::string
+
+	this->_HTTPContext = std::move(HTTPContext);
+
+	// std::pair<std::string, std::string> header_body_split = HTTP::HTTPParser::request_split_header_body(raw_read_buffer);
+
+	HTTP::HTTPConst::HTTP_RESPONSE_CODE tmp_http_message_paser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+	std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTPMessage>(
+			tmp_http_message_paser_status, raw_read_buffer
+			);
 }
 inline void HTTP::HTTPHandler::HTTPHandler::HTTPCreateEndpoint(
 				const HTTP::HTTPHandler::HTTPPostEndpoint& post_endpoint) noexcept {

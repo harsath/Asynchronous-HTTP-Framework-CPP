@@ -24,20 +24,18 @@ set(LIB_BIN_NAME libhttp)
 
 set(
 	SRC_LIB_FILES
-	./HTTPHeader.hpp
-	./HTTPHeader.cpp
-	./HTTPHandler.hpp
-	./HTTPHandler.cpp
 	./HTTPHelpers.hpp
-	./HTTPAcceptor.cpp
-	./HTTPAcceptor.hpp
-	./HTTPConstants.hpp
-	./HTTPParserRoutine.hpp
-	./HTTPLogHelpers.hpp
-	./HTTPHeader.cpp
-	./HTTPHeader.hpp
 	./HTTPMessage.hpp
 	./HTTPMessage.cpp
+	./HTTPHeaders.hpp
+	./HTTPHeaders.cpp
+	./HTTPAcceptor.hpp
+	./HTTPAcceptor.cpp
+	./HTTPHandler.hpp
+	./HTTPHandler.cpp
+	./HTTPConstants.hpp
+	./HTTPLogHelpers.hpp
+	./HTTPParserRoutine.hpp
 	)
 add_library(
 	${LIB_BIN_NAME} 

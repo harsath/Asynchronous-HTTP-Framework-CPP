@@ -38,6 +38,7 @@ namespace HTTP::HTTPHelpers{
 	struct HTTPTransactionContext{
 		HTTP::HTTPConst::HTTP_SERVER_TYPE HTTPServerType;
 		int HTTPClientFD;
+		HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTPResponceState;
 	};
 
 	struct Post_keyvalue{
