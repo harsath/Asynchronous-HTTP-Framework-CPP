@@ -16,12 +16,16 @@ namespace HTTP{
 		public:
 			explicit HTTPHeaders(std::string&& ClientHeader);
 			explicit HTTPHeaders(const std::string& ClientHeader);
+			explicit HTTPHeaders(){}
 			void AddHeader(const std::pair<std::string, std::string>& header_pair) noexcept;
 			int RemoveHeader(const std::string& name) noexcept;
 			std::string BuildRawMessage() const noexcept;
 			std::optional<std::string> GetHeaderValue(const std::string& name) const noexcept;
 			std::size_t GetHeaderCount() const noexcept;
 			bool HeaderContains(const std::string& name) const noexcept;
+			HTTP::HTTPConst::HTTP_RESPONSE_CODE
+				GetParseResponseCode() const noexcept;
+			~HTTPHeaders() = default;
 	};
 
 }

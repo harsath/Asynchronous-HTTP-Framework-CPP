@@ -82,3 +82,18 @@ std::size_t HTTP::HTTPHeaders::GetHeaderCount() const noexcept {
 bool HTTP::HTTPHeaders::HeaderContains(const std::string &name) const noexcept {
 	return this->_HTTPHeaders.contains(name);
 }
+
+std::string HTTP::HTTPHeaders::BuildRawMessage() const noexcept {
+	std::string returner{};
+	for(const std::pair<std::string, std::string>& header_pair : this->_header_pair_vector){
+		returner += header_pair.first;
+		returner += ": ";
+		returner += header_pair.second;
+		returner += "\r\n";
+	}
+	return returner;
+}
+
+HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPHeaders::GetParseResponseCode() const noexcept {
+	return this->_parser_response;
+}
