@@ -10,7 +10,7 @@
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 
-inline void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
+void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 		const std::string& server_addr,
 		const std::uint16_t server_port,
 		int server_backlog,
@@ -54,7 +54,7 @@ inline void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 	}
 }
 
-inline void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
+void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 	int return_check = listen(this->_server_sock_fd, this->_server_backlog);
 	HTTP::HTTPHelpers::err_check(return_check, "linux listen()");
 

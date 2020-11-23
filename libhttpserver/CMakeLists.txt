@@ -53,7 +53,8 @@ set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(
-	${LIB_BIN_NAME} OpenSSL::Crypto
+	${LIB_BIN_NAME} 
+	OpenSSL::Crypto
 	OpenSSL::SSL
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only

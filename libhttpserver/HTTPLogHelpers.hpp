@@ -60,29 +60,29 @@ namespace HTTP::LOG{
 			~AccessContext();
 	};
 
-	void ErrorContext::log(const std::string &fmt_str) const noexcept {
+	inline void ErrorContext::log(const std::string &fmt_str) const noexcept {
 		std::fprintf(this->_error_stream, "[Error] %s\n", fmt_str.c_str());
 		fflush(this->_error_stream);
 	}
 
-	void AccessContext::log(const std::string &fmt_str) const noexcept {
+	inline void AccessContext::log(const std::string &fmt_str) const noexcept {
 		std::fprintf(this->_access_stream, "[Access] %s\n", fmt_str.c_str());
 		fflush(this->_access_stream);
 	}
 
-	ErrorContext::ErrorContext(const std::string& file_name){
+	inline ErrorContext::ErrorContext(const std::string& file_name){
 		this->_error_stream = std::fopen(file_name.c_str(), "a");
 	}
 
-	ErrorContext::~ErrorContext(){
+	inline ErrorContext::~ErrorContext(){
 		std::fclose(this->_error_stream);
 	}
 
-	AccessContext::AccessContext(const std::string& file_name){
+	inline AccessContext::AccessContext(const std::string& file_name){
 		this->_access_stream = std::fopen(file_name.c_str(), "a");
 	}
 
-	AccessContext::~AccessContext(){
+	inline AccessContext::~AccessContext(){
 		std::fclose(this->_access_stream);
 	}
 

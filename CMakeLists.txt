@@ -39,10 +39,11 @@ enable_testing()
 
 add_subdirectory(./libhttpserver)
 include_directories(./libhttpserver)
-# add_subdirectory(./test)
+link_directories(./libhttpserver)
 add_subdirectory(./vendor/json)
 add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
+add_subdirectory(./test)
 
 add_executable(
 	${PROJECT_NAME}
