@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
@@ -16,6 +17,7 @@ namespace HTTP{
 			std::string _request_target;
 			std::string _http_version;
 			std::string _http_status_code;
+			std::string _response_type;
 			HTTP::HTTPConst::HTTP_RESPONSE_CODE _http_parser_status = 
 				HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 
@@ -24,55 +26,43 @@ namespace HTTP{
 					HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status,
 					const char* raw_read_buffer
 					);
-			explicit HTTPMessage(
-					HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status
-					);
-
-			void RequestLineParser(std::string&& client_request) noexcept;
-			void RequestLineParser(const std::string& client_request) noexcept;
+			explicit HTTPMessage(){}
 
 			void HTTPHeaderBuild(std::string&& ClientHeader, std::string&& ClientBody);
-			void HTTPHeaderBuild(const std::string& ClientHeader, std::string& ClientBody);
+			void HTTPHeaderBuild(const std::string& ClientHeader, const std::string& ClientBody);
 
 			// Add a header to HTTPHeaders
-			void AddHeader(const std::string& name, const std::string& value);
-			void AddHeader(std::string&& name, std::string&& value);
+			void AddHeader(const std::string& name, const std::string& value) noexcept;
 
 			// Remove a header from HTTPHeaders with key as `name`
-			int RemoveHeader(const std::string& name);
-			int RemoveHeader(std::string&& name);
+			int RemoveHeader(const std::string& name) noexcept;
 
 			// Remove the body completly from the HTTP Message
-			int RemoveBodyFlush();
+			int RemoveBodyFlush() noexcept;
 			
 			void SetRequestType(const std::string& req_type) noexcept;
-			void GetRequestType() const noexcept;
+			std::string GetRequestType() const noexcept;
 
-			void SetRequestResource(const std::string& req_resource) noexcept;
-			void GetRequestResoure() const noexcept;
+			void SetTargetResource(const std::string& req_resource) noexcept;
+			std::string GetTargetResource() const noexcept;
 
 			void SetHTTPVersion(const std::string& http_version) noexcept;
-			void GetHTTPVersion() const noexcept;
+			std::string GetHTTPVersion() const noexcept;
 
 			void SetRawBody(std::string&& raw_body) noexcept;
-			void SetRawBody(const std::string& raw_body) const noexcept;
+			void SetRawBody(const std::string& raw_body) noexcept;
 
-			void SetHTTPHeader(std::unique_ptr<HTTPHeaders>&& headers_ptr) noexcept;
+			void SetHTTPHeader(std::unique_ptr<HTTPHeaders> headers) noexcept;
 			const std::unique_ptr<HTTPHeaders>& ConstGetHTTPHeader() const noexcept;
+
+			void SetResponseType(const std::string& res_type) noexcept;
+			std::string GetResponseType() const noexcept;
+
+			HTTP::HTTPConst::HTTP_RESPONSE_CODE GetResponseCode() const noexcept;
+			void SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept;
 		
 			std::string BuildRawResponseMessage() const noexcept;
 
 	};
 
-	template<typename T> std::unique_ptr<HTTPMessage> HTTPMessageRelay(T&& ClientHeader, T&&ClientBody){
-		return std::make_unique<HTTPMessage>(
-				std::forward<T>(ClientHeader), std::forward<T>(ClientBody)
-				);
-	}
-	template<typename T> std::unique_ptr<HTTPHeaders> HTTPHeaderseRelay(T&& ClientHeader){
-		return std::make_unique<HTTPHeaders>(
-				std::forward<T>(ClientHeader)
-				);
-	}
-
-}
+} // end namesapce HTTP

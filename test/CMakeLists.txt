@@ -40,6 +40,7 @@ set(
 	GTEST_SOURCE_FILES
 	./test-HTTPHeaders.cpp
 	./test-HTTPParserRoutine.cpp
+	./test-HTTPMessage.cpp
 	)
 
 add_executable(

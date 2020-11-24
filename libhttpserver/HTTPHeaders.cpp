@@ -97,3 +97,7 @@ std::string HTTP::HTTPHeaders::BuildRawMessage() const noexcept {
 HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPHeaders::GetParseResponseCode() const noexcept {
 	return this->_parser_response;
 }
+
+std::vector<std::pair<std::string, std::string>> HTTP::HTTPHeaders::GetHeaderPairVector() const noexcept {
+	return this->_header_pair_vector;
+}

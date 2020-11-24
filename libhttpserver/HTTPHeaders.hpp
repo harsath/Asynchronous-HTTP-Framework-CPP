@@ -23,6 +23,7 @@ namespace HTTP{
 			std::optional<std::string> GetHeaderValue(const std::string& name) const noexcept;
 			std::size_t GetHeaderCount() const noexcept;
 			bool HeaderContains(const std::string& name) const noexcept;
+			std::vector<std::pair<std::string, std::string>> GetHeaderPairVector() const noexcept;
 			HTTP::HTTPConst::HTTP_RESPONSE_CODE
 				GetParseResponseCode() const noexcept;
 			~HTTPHeaders() = default;
