@@ -143,6 +143,7 @@ namespace HTTP::HTTPParser{
 				}
 			}
 			returner.push_back(temp);
+			free(original);
 		}
 
 		// Field parsing (RFC7230 section: 3.2.4)

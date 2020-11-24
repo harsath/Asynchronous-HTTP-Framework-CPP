@@ -23,10 +23,10 @@ namespace HTTP{
 
 		public:
 			explicit HTTPMessage(
-					HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status,
-					const char* raw_read_buffer
+					const char* raw_read_buffer,
+					HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status
 					);
-			explicit HTTPMessage(){}
+			explicit HTTPMessage();
 
 			void HTTPHeaderBuild(std::string&& ClientHeader, std::string&& ClientBody);
 			void HTTPHeaderBuild(const std::string& ClientHeader, const std::string& ClientBody);
@@ -51,6 +51,7 @@ namespace HTTP{
 
 			void SetRawBody(std::string&& raw_body) noexcept;
 			void SetRawBody(const std::string& raw_body) noexcept;
+			std::string GetRawBody() const noexcept;
 
 			void SetHTTPHeader(std::unique_ptr<HTTPHeaders> headers) noexcept;
 			const std::unique_ptr<HTTPHeaders>& ConstGetHTTPHeader() const noexcept;

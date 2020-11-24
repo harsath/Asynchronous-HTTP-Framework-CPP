@@ -7,8 +7,8 @@
 #include <vector>
 
 HTTP::HTTPMessage::HTTPMessage(
-		HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status,
-		const char* raw_read_buffer
+		const char* raw_read_buffer,
+		HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status
 		){
 	this->_http_parser_status = http_parser_status;
 	std::pair<std::string, std::string> header_and_body_pair = 
@@ -23,6 +23,11 @@ HTTP::HTTPMessage::HTTPMessage(
 	this->_http_version = request_line_splitted.at(2);
 
 	this->_raw_body = std::move(header_and_body_pair.second);
+}
+
+HTTP::HTTPMessage::HTTPMessage(){
+	this->_http_parser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+	this->_HTTPHeader = std::make_unique<HTTP::HTTPHeaders>();
 }
 
 void HTTP::HTTPMessage::SetHTTPHeader(std::unique_ptr<HTTPHeaders> headers) noexcept {
@@ -52,7 +57,7 @@ void HTTP::HTTPMessage::AddHeader(const std::string &name, const std::string &va
 }
 
 int HTTP::HTTPMessage::RemoveHeader(const std::string& name) noexcept {
-	return this->RemoveHeader(name);
+	return this->_HTTPHeader->RemoveHeader(name);
 }
 
 int HTTP::HTTPMessage::RemoveBodyFlush() noexcept {
@@ -134,4 +139,8 @@ HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPMessage::GetResponseCode() const n
 
 void HTTP::HTTPMessage::SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept {
 	this->_http_parser_status = res_code;
+}
+
+std::string HTTP::HTTPMessage::GetRawBody() const noexcept {
+	return this->_raw_body;
 }

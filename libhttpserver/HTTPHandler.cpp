@@ -21,7 +21,7 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
 
 	HTTP::HTTPConst::HTTP_RESPONSE_CODE tmp_http_message_paser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 	std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTPMessage>(
-			tmp_http_message_paser_status, raw_read_buffer
+			raw_read_buffer, tmp_http_message_paser_status
 			);
 }
 void HTTP::HTTPHandler::HTTPHandler::HTTPCreateEndpoint(
