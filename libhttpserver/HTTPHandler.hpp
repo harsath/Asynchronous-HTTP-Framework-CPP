@@ -89,7 +89,7 @@ namespace HTTP::HTTPHandler{
 			explicit HTTPGETResponseHandler(
 					std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage,
 					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
-					std::unordered_map<std::string, std::string>&& _filename_and_filepath_map
+					const std::unordered_map<std::string, std::string>& _filename_and_filepath_map
 					);
 			void HTTPProcessor(
 					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,

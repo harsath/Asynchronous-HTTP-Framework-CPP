@@ -65,7 +65,7 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPResponseHandler() noexcept {
 		std::unique_ptr<HTTP::HTTPHandler::HTTPGETResponseHandler> GetRequestHandler = 
 			std::make_unique<HTTP::HTTPHandler::HTTPGETResponseHandler>(
 					std::move(this->_HTTPMessage), std::move(this->_HTTPContext),
-					std::move(this->_filename_and_filepath_map)
+					this->_filename_and_filepath_map
 					);
 	}else if(this->_HTTPMessage->GetRequestType() == "POST"){
 		// TODO
@@ -88,7 +88,7 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPCreateEndpoint(
 HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 			std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage_,
 			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext_,
-			std::unordered_map<std::string, std::string>&& filename_and_filepath_map_){
+			const std::unordered_map<std::string, std::string>& filename_and_filepath_map_){
 
 	std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);	
 	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
