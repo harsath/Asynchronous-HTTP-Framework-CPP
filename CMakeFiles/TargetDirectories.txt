@@ -1,3 +1,0 @@
-/home/samsapi0l/cpp_code/http_fun_serv/CMakeFiles/rebuild_cache.dir
-/home/samsapi0l/cpp_code/http_fun_serv/CMakeFiles/edit_cache.dir
-/home/samsapi0l/cpp_code/http_fun_serv/CMakeFiles/l.dir

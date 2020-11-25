@@ -1,1 +1,0 @@
-/usr/bin/c++     CMakeFiles/l.dir/lol.cpp.o  -o l 

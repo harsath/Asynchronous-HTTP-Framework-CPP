@@ -10,6 +10,8 @@
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 
+#define debug_print(val) std::cout << val << std::endl
+
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 		const std::string& server_addr,
 		const std::uint16_t server_port,
@@ -61,24 +63,24 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 	int addr_len = sizeof(this->_server_addr);
 	this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
 	this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER;
-	this->_HTTPContext->HTTPResponceState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+	this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 
 	for(;;){
+		debug_print("accepting");
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
 						reinterpret_cast<socklen_t*>(&addr_len));
 		HTTP::HTTPHelpers::err_check(client_fd, "linux accept()");
 
-		this->_http_handler_ptr->LogSetClientIP(
-				inet_ntoa(this->_client_sockaddr.sin_addr)
-				);
-		
-		HTTP::HTTPHelpers::read_date(this->_server_sock_fd, this->_acceptor_read_buff, this->_acceptor_read_buff_size, 0);
+		HTTP::HTTPHelpers::read_date(client_fd, this->_acceptor_read_buff, this->_acceptor_read_buff_size, 0);
+		debug_print("readed");
 
 		this->_HTTPContext->HTTPClientFD = client_fd;
+		this->_HTTPContext->HTTPLogHolder.client_ip = inet_ntoa(this->_client_sockaddr.sin_addr);
 
 		this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
 
 		HTTP::HTTPHelpers::close_connection(client_fd);
+		::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
 		std::cout << "HTTP-Transaction done\n";
 	}
 }

@@ -36,6 +36,8 @@ set(
 	./HTTPConstants.hpp
 	./HTTPLogHelpers.hpp
 	./HTTPParserRoutine.hpp
+	./HTTPResponder.hpp
+	./HTTPResponder.cpp
 	)
 add_library(
 	${LIB_BIN_NAME} 
@@ -62,4 +64,4 @@ target_link_libraries(
 
 target_compile_options(
 	${LIB_BIN_NAME} 
-	PRIVATE -g -fsanitize=address)
+	PRIVATE -g)

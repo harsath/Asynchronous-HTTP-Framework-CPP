@@ -38,6 +38,7 @@
 #include <netinet/in.h>
 #include "HTTPHelpers.hpp"
 #include "HTTPLogHelpers.hpp"
+#include "HTTPMessage.hpp"
 #include <vector>
 #include <unordered_map>
 #include <functional>
@@ -61,10 +62,10 @@ namespace HTTP::HTTPHandler{
 
 	class HTTPHandler{
 		private:
-			HTTP::LOG::LogMessage _log_holder;
 			std::string _path_to_routesfile;
 			std::unordered_map<std::string, std::string> _filename_and_filepath_map;
 			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
+			std::unique_ptr<HTTP::HTTPMessage> _HTTPMessage;
 			std::unique_ptr<HTTP::LOG::LoggerHelper> _logger = 
 				HTTP::LOG::LoggerFactory::MakeLog("HTTPAccess.log", HTTP::LOG::LoggerFactory::Access);
 			// < PostEndpoint, {Content-Type, CallBack-Function} >
@@ -79,17 +80,33 @@ namespace HTTP::HTTPHandler{
 					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
 					char* raw_read_buffer, 
 					std::size_t raw_read_size);
-			void LogSetClientIP(const std::string& client_ip) noexcept;
-			void LogSetDate(const std::string& log_date) noexcept;
-			void LogSetRequestResource(const std::string& req_resource) noexcept;
-			void LogSetUserAgent(const std::string& useragent) noexcept;
-			void LogSetLogMessage(const std::string& log_message) noexcept;
+			void HTTPResponseHandler() noexcept;
 			~HTTPHandler() = default;
+	};
+
+	class HTTPGETResponseHandler{
+		public:
+			explicit HTTPGETResponseHandler(
+					std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage,
+					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
+					std::unordered_map<std::string, std::string>&& _filename_and_filepath_map
+					);
+			void HTTPProcessor(
+					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
+					std::unique_ptr<HTTP::HTTPMessage> HTTPResponse
+					);
+	};
+
+	class HTTPPOSTResponseHandler{
+		public:
+			explicit HTTPPOSTResponseHandler(
+					std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage,
+					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
+					std::unordered_map<std::string,
+						std::pair<std::string, std::function<std::string(const std::string&)>>
+					> _post_endpoint_and_callbacks
+					);
 	};
 
 		
 } // end namespace HTTP::HTTPHandler
-
-namespace HTTP::HTTPHandler::Common{
-	void HTTPGenerateRouteMap(std::unordered_map<std::string, std::string>& map_ref, const std::string& path_to_root);
-} // end namespace HTTP::HTTPHandler::Common

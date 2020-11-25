@@ -21,6 +21,7 @@
 
 #pragma once
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string.h>
 #include <sys/socket.h>
@@ -33,12 +34,14 @@
 #include <fmt/format.h>
 #include "HTTPConstants.hpp"
 #include "HTTPLogHelpers.hpp"
+#include <filesystem>
 
 namespace HTTP::HTTPHelpers{
 	struct HTTPTransactionContext{
 		HTTP::HTTPConst::HTTP_SERVER_TYPE HTTPServerType;
 		int HTTPClientFD;
-		HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTPResponceState;
+		HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTPResponseState;
+		LOG::LogMessage HTTPLogHolder;
 	};
 
 	struct Post_keyvalue{
@@ -93,5 +96,30 @@ namespace HTTP::HTTPHelpers{
 		int close_ret = ::close(client_fd);
 		err_check(close_ret, "linux close()");
 	}
+
+	inline void HTTPGenerateRouteMap(std::unordered_map<std::string, std::string>& map_ref, const std::string& path_to_root){
+		for(auto& files : std::filesystem::directory_iterator(path_to_root)){
+			map_ref.emplace(std::make_pair(
+					std::move(std::string{"/"}+std::string(std::move(files.path().filename()))),
+					std::move(files.path())
+						));
+		}
+	}
+
+	inline std::string read_file(const std::string& file_path){
+		std::string raw_data;
+		std::ifstream file_stream(file_path);
+		if(file_stream.is_open()){
+			std::string file_lines;
+			while(std::getline(file_stream, file_lines)){
+				raw_data += file_lines;
+			}
+		}else{
+			return "Internal server error";
+		}
+		return raw_data;
+	}
+
+
 
 } // end namespace HTTP::HTTPHelpers

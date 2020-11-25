@@ -62,7 +62,6 @@ add_test(
 	COMMAND ${GTEST_EXEC_NAME}
 	)
 
-target_link_options(
-	${GTEST_EXEC_NAME}
-	PUBLIC -fsanitize=address
-	)
+# target_link_options(
+# 	${GTEST_EXEC_NAME}
+	# )
