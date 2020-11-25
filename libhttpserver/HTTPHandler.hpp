@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include "HTTPHeaders.hpp"
 #include "HTTPHelpers.hpp"
 #include "HTTPLogHelpers.hpp"
 #include "HTTPMessage.hpp"
@@ -102,9 +103,13 @@ namespace HTTP::HTTPHandler{
 			explicit HTTPPOSTResponseHandler(
 					std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage,
 					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
-					std::unordered_map<std::string,
+					const std::unordered_map<std::string,
 						std::pair<std::string, std::function<std::string(const std::string&)>>
-					> _post_endpoint_and_callbacks
+					>& _post_endpoint_and_callbacks
+					);
+			void HTTPProcessor(
+					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
+					std::unique_ptr<HTTP::HTTPMessage> HTTPResponse
 					);
 	};
 

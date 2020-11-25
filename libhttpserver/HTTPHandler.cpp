@@ -68,11 +68,10 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPResponseHandler() noexcept {
 					this->_filename_and_filepath_map
 					);
 	}else if(this->_HTTPMessage->GetRequestType() == "POST"){
-		// TODO
-		// std::unique_ptr<HTTP::HTTPHandler::HTTPPOSTResponseHandler> PostRequestHandler = 
-		// 	std::make_unique<HTTP::HTTPHandler::HTTPPOSTResponseHandler>(
-                //
-		// 			);
+		std::unique_ptr<HTTP::HTTPHandler::HTTPPOSTResponseHandler> PostRequestHandler = 
+			std::make_unique<HTTP::HTTPHandler::HTTPPOSTResponseHandler>(
+					std::move()
+					);
 	}
 }
 
@@ -117,6 +116,17 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
 			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+		}else if(HTTPClientMessage->GetTargetResource() == "/"){
+			std::string raw_body = HTTP::HTTPHelpers::read_file(
+					filename_and_filepath_map.at("/index.html")
+					);
+			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+			HTTPResponseMessage->SetResponseType("OK");
+			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
+			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
+			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
+			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+
 		}else{
 			std::string raw_body = "<html><h2> Oops, 404 Not Found :( </h2></html>";
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
@@ -149,3 +159,31 @@ void HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPProcessor(
 		// TODO SSL-Handler
 	}
 }
+
+// Implementation of HTTPPOSTResponseHandler (HTTP POST and Callback invoke)
+HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
+				std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage_,
+				std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext_,
+				const std::unordered_map<std::string,
+					std::pair<std::string, std::function<std::string(const std::string&)>>
+					>& post_endpoint_and_callbacks){
+	std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);
+	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
+
+	std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+	
+	// Checking if request's target POST endpoint is supported
+	if(post_endpoint_and_callbacks.contains(HTTPClientMessage->GetTargetResource())){
+			
+	}else{
+		std::string raw_body = "<html><h2> 405 Method Not Allowed. Illegal request. </h2></html>";
+		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+		HTTPResponseMessage->SetResponseType("Method Not Allowed");
+		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::METHOD_NOT_ALLOWED);
+		HTTPResponseMessage->AddHeader("Content-Type", "text/html");
+		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
+		HTTPResponseMessage->SetRawBody(std::move(raw_body));
+	}
+
+}
+
