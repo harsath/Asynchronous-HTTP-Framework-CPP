@@ -12,6 +12,7 @@ matrix:
 
 before_install:
         - sudo apt install libcrypto++-dev -y
+        - sudo apt-get install libssl-dev -y
         - eval "${MATRIX_EVAL}"
 
 language: cpp

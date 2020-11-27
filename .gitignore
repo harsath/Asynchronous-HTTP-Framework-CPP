@@ -13,3 +13,7 @@ foo.cpp
 .clangd/
 ./-v
 note.txt
+<<<<<<< HEAD
+TODO
+=======
+>>>>>>> master

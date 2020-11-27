@@ -39,10 +39,20 @@ enable_testing()
 
 add_subdirectory(./libhttpserver)
 include_directories(./libhttpserver)
-add_subdirectory(./test)
+link_directories(./libhttpserver)
 add_subdirectory(./vendor/json)
 add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
+add_subdirectory(./test)
+
+set_target_properties(
+        ${PROJECT_NAME}
+        PROPERTIES LINKER_LANGUAGE CXX
+        )
+
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+
+find_package(OpenSSL REQUIRED)
 
 add_executable(
 	${PROJECT_NAME}
@@ -52,6 +62,8 @@ add_executable(
 target_link_libraries(
 	${PROJECT_NAME}
 	libhttp
+	OpenSSL::Crypto
+        OpenSSL::SSL
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
 	)

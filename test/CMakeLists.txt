@@ -31,26 +31,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+set(GTEST_EXEC_NAME HTTPTest)
+
 include_directories(../libhttpserver)
-
-set(EXEC_NAME server_test)
-
-set(GTEST_EXEC_NAME server_test_two)
-
-set(
-	SOURCE_FILES
-	./test_helper.hpp
-	./internet_domain_post_test.cpp
-	)
+link_directories(../libhttpserver)
 
 set(
 	GTEST_SOURCE_FILES
-	./processing_functions_test.cpp
-	)
-
-add_executable(
-	${EXEC_NAME}
-	${SOURCE_FILES}
+	./test-HTTPHeaders.cpp
+	./test-HTTPParserRoutine.cpp
+	./test-HTTPMessage.cpp
 	)
 
 add_executable(
@@ -59,12 +49,8 @@ add_executable(
 	)
 
 target_link_libraries(
-	${EXEC_NAME}
-	libhttp
-	)
-
-target_link_libraries(
 	${GTEST_EXEC_NAME}
+	libhttp
 	pthread
 	gtest_main
 	nlohmann_json::nlohmann_json
@@ -72,6 +58,10 @@ target_link_libraries(
 	)
 
 add_test(
-	NAME ${EXEC_NAME}
-	COMMAND ${EXEC_NAME}
+	NAME ${GTEST_EXEC_NAME}
+	COMMAND ${GTEST_EXEC_NAME}
 	)
+
+# target_link_options(
+# 	${GTEST_EXEC_NAME}
+	# )

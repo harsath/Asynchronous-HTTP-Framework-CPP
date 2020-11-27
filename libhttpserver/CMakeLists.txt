@@ -24,11 +24,22 @@ set(LIB_BIN_NAME libhttp)
 
 set(
 	SRC_LIB_FILES
-	./helper_functions.hpp
-	./internet_domain_http.hpp
-	./logger_helpers.hpp
-	./SSL_selfsigned_internet_domain_http.hpp)
-
+	./HTTPHelpers.hpp
+	./HTTPMessage.hpp
+	./HTTPMessage.cpp
+	./HTTPHeaders.hpp
+	./HTTPHeaders.cpp
+	./HTTPAcceptor.hpp
+	./HTTPAcceptor.cpp
+	./HTTPHandler.hpp
+	./HTTPHandler.cpp
+	./HTTPConstants.hpp
+	./HTTPLogHelpers.hpp
+	./HTTPParserRoutine.hpp
+	./HTTPResponder.hpp
+	./HTTPResponder.cpp
+	./HTTPSSLHelpers.hpp
+	)
 add_library(
 	${LIB_BIN_NAME} 
 	STATIC ${SRC_LIB_FILES})
@@ -45,7 +56,8 @@ set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 
 target_link_libraries(
-	${LIB_BIN_NAME} OpenSSL::Crypto
+	${LIB_BIN_NAME} 
+	OpenSSL::Crypto
 	OpenSSL::SSL
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
@@ -53,4 +65,4 @@ target_link_libraries(
 
 target_compile_options(
 	${LIB_BIN_NAME} 
-	PRIVATE -g -fsanitize=address)
+	PRIVATE -g)
