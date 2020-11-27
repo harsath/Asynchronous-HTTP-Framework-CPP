@@ -125,6 +125,12 @@ std::string HTTP::HTTPMessage::BuildRawResponseMessage() const noexcept {
 		case HTTP_RESPONSE_CODE::NOT_ACCEPTABLE:
 			returner += "406 Not Acceptable\r\n";
 			break;
+		case HTTP_RESPONSE_CODE::METHOD_NOT_ALLOWED:
+			returner += "405 Method Not Allowed";
+			break;
+		case HTTP_RESPONSE_CODE::UNSUPPORTED_MEDIA_TYPE:
+			returner += "415 Unsupported Media Type\r\n";
+			break;
 	}
 	for(const std::pair<std::string, std::string>& header_pair : this->_HTTPHeader->GetHeaderPairVector()){
 		returner += header_pair.first + ": " + header_pair.second + "\r\n";

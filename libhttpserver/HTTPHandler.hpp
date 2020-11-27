@@ -58,7 +58,7 @@ namespace HTTP::HTTPHandler{
 	struct HTTPPostEndpoint{
 		std::string post_endpoint;
 		std::string post_accept_type;
-		std::function<std::string(const std::string&)> callback_fn{nullptr};
+		std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>)> callback_fn{nullptr};
 	};
 
 	class HTTPHandler{
@@ -71,7 +71,7 @@ namespace HTTP::HTTPHandler{
 				HTTP::LOG::LoggerFactory::MakeLog("HTTPAccess.log", HTTP::LOG::LoggerFactory::Access);
 			// < PostEndpoint, {Content-Type, CallBack-Function} >
 			std::unordered_map<std::string, 
-				std::pair<std::string, std::function<std::string(const std::string&)>>
+				std::pair<std::string, std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>)>>
 					> _post_endpoint;
 		public:
 			explicit HTTPHandler(const std::string& path_to_root);
@@ -92,10 +92,6 @@ namespace HTTP::HTTPHandler{
 					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
 					const std::unordered_map<std::string, std::string>& _filename_and_filepath_map
 					);
-			void HTTPProcessor(
-					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
-					std::unique_ptr<HTTP::HTTPMessage> HTTPResponse
-					);
 	};
 
 	class HTTPPOSTResponseHandler{
@@ -104,14 +100,15 @@ namespace HTTP::HTTPHandler{
 					std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage,
 					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
 					const std::unordered_map<std::string,
-						std::pair<std::string, std::function<std::string(const std::string&)>>
+						std::pair<std::string, std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>)>>
 					>& _post_endpoint_and_callbacks
 					);
-			void HTTPProcessor(
-					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
-					std::unique_ptr<HTTP::HTTPMessage> HTTPResponse
-					);
 	};
+
+	void HTTPResponseProcessor(
+				std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
+				std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage
+			);
 
 		
 } // end namespace HTTP::HTTPHandler

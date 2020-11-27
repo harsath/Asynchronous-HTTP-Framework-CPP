@@ -70,7 +70,8 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPResponseHandler() noexcept {
 	}else if(this->_HTTPMessage->GetRequestType() == "POST"){
 		std::unique_ptr<HTTP::HTTPHandler::HTTPPOSTResponseHandler> PostRequestHandler = 
 			std::make_unique<HTTP::HTTPHandler::HTTPPOSTResponseHandler>(
-					std::move()
+					std::move(this->_HTTPMessage), std::move(this->_HTTPContext),
+					this->_post_endpoint
 					);
 	}
 }
@@ -138,10 +139,10 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 		}
 	}
 	
-	this->HTTPProcessor(std::move(HTTPContext), std::move(HTTPResponseMessage));
+	HTTP::HTTPHandler::HTTPResponseProcessor(std::move(HTTPContext), std::move(HTTPResponseMessage));
 }
 
-void HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPProcessor(
+void HTTP::HTTPHandler::HTTPResponseProcessor(
 		std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext_, 
 		std::unique_ptr<HTTP::HTTPMessage> HTTPResponse_){
 
@@ -165,7 +166,7 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 				std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage_,
 				std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext_,
 				const std::unordered_map<std::string,
-					std::pair<std::string, std::function<std::string(const std::string&)>>
+					std::pair<std::string, std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>)>>
 					>& post_endpoint_and_callbacks){
 	std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);
 	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
@@ -174,16 +175,31 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 	
 	// Checking if request's target POST endpoint is supported
 	if(post_endpoint_and_callbacks.contains(HTTPClientMessage->GetTargetResource())){
+		// Checking if the Content-Type is supported by the origin-server	
+		if(HTTPClientMessage->ConstGetHTTPHeader()->GetHeaderValue("Content-Type") == 
+				post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).first){
+
+			HTTPResponseMessage = post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).second(std::move(HTTPClientMessage));
 			
+		}else{
+			std::string raw_body = "This endpoint only supports " + post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).first;
+			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+			HTTPResponseMessage->SetResponseType("Unsupported Media Type");
+			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNSUPPORTED_MEDIA_TYPE);
+			HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
+			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
+			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+		}
 	}else{
-		std::string raw_body = "<html><h2> 405 Method Not Allowed. Illegal request. </h2></html>";
+		std::string raw_body = "405 Method Not Allowed. No such endpoints";
 		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
 		HTTPResponseMessage->SetResponseType("Method Not Allowed");
 		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::METHOD_NOT_ALLOWED);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/html");
+		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
 		HTTPResponseMessage->SetRawBody(std::move(raw_body));
 	}
 
-}
+	HTTP::HTTPHandler::HTTPResponseProcessor(std::move(HTTPContext), std::move(HTTPResponseMessage));
 
+}
