@@ -45,6 +45,11 @@ add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
 add_subdirectory(./test)
 
+set_target_properties(
+        ${PROJECT_NAME}
+        PROPERTIES LINKER_LANGUAGE CXX
+        )
+
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 find_package(OpenSSL REQUIRED)
