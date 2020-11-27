@@ -9,13 +9,8 @@ matrix:
             - g++-9
       env:
         - MATRIX_EVAL="CC=gcc-9 && CXX=g++-9"
-
 before_install:
-        - sudo apt install libcrypto++-dev -y
-        - sudo apt-get install libssl-dev -y
         - eval "${MATRIX_EVAL}"
-
 language: cpp
-
 script:
         - chmod +x ./CI-scripts/build_run_tests_CI.sh && bash ./CI-scripts/build_run_tests_CI.sh

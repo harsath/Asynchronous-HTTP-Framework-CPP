@@ -19,21 +19,55 @@
 // TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "SSL_selfsigned_internet_domain_http.hpp"
+#include <cstdlib>
+#include <memory>
+#include <string>
 #include <vector>
 #include <iostream>
+#include "HTTPAcceptor.hpp"
+#include "HTTPConstants.hpp"
+#include "HTTPMessage.hpp"
+#include <nlohmann/json.hpp>
 
-auto main(int argc, const char*const argv[]) -> int {
- 	std::vector<Post_keyvalue> post_form_data_parsed;
-	SSL_load_error_strings();
-	OpenSSL_add_ssl_algorithms();
+std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage){
+	try{
+		using json = nlohmann::json;
+		auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
+		int int_value = parsed_json["value_one"];
+		std::string string_value = parsed_json["value_two"];
+		std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
 
-	// Make sure to generate a x509 type CERT pass the SSL CERT and Key here
-	Socket::inetv4::stream_sock ssl_sock("127.0.0.1", 4445, 1000, 10, "./configs/html_src/index.html", "./configs/routes.conf", "./cert.pem", "./key.pem");
-//			   endpoint, Content-Type, Location, &parsed_data
-	ssl_sock.create_post_endpoint("/poster", "/poster_print", true, post_form_data_parsed);
-	ssl_sock.ssl_stream_accept();
+		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+		HTTPResponseMessage->SetResponseType("Created");
+		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
+		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
+		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
+		HTTPResponseMessage->SetRawBody(std::move(returner));
 
+		return HTTPResponseMessage;
+	}catch(const std::exception& e){
+		std::cout << e.what() << std::endl;
+		std::string returner_exception = "Invalid POST data to JSON endpoint";
+		return nullptr;
+	}
+}
+
+int main(int argc, const char* argv[]){
+
+	std::vector<HTTP::HTTPHandler::HTTPPostEndpoint> post_endpoint = { };
+
+	std::unique_ptr<HTTP::HTTPAcceptor::HTTPAcceptor> http_acceptor = std::make_unique<HTTP::HTTPAcceptor::HTTPAcceptorSSL>();
+	http_acceptor->HTTPStreamSock(
+			"127.0.0.1", /* IPv4 addr */
+			9876, /* bind port */
+			10, /* backlog number */
+			HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER, /* type of server, Plaintext/SSL */
+			"./configs/html_src", /* Path to HTML root directory */
+			post_endpoint, /* Callback endpoints and accepted Content-Type <Optional> */
+			"./cert.pem", /* path to SSL CERT file */
+			"./key.pem" /* path to SSL private key */
+			);
+	http_acceptor->HTTPStreamAccept();
 	return 0;
-
 }

@@ -2,68 +2,64 @@
 [![Build Status](https://travis-ci.org/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231.svg?branch=master)](https://travis-ci.org/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)    ![GitHub](https://img.shields.io/github/license/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)
 
 ```
-Warning  : This project is partially finished as Im progressing through implementing the RFC.
-	   Feel free to check the code and give your points
 Project  : C++ SSL HTTP Application Server & Parser Implementation (from scratch)
 RFC      : 7231
 Language : C++ (with some C UNIX Syscalls and APIs)
 ```
 
-Steps:
+##### Steps:
 1. Generate a Self-signed SSL CERT and Private Key 
 ```
 $ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 ```
 
-> For SSL HTTP server
+2. Run, `$ mkdir build && cd build && CC=gcc-9 CXX=g++-9 cmake .. && make`
 
-2. Compile the source code by linking the OpenSSL crypto libs
+3. Note that, you need to have OpenSSL installed on your machine to build.
 
+4. Copy the the sample html files (or point to your own files) with `$ cp -r ../configs .`
+
+Now, run the server with `./server`
+
+You can checkout the libHTTPserver's architecture in `HTTP-Server-Arch.jpg`
+
+5. You can now, test the SSL/HTTPS server through cURL or openssl's s_client
 ```
-$ g++ -Wall SSL_selfsigned_internet_domain_http.cpp -std=c++17 -O3 -lcrypto -lssl -o ssl_server
-```
-
-> For plaintext HTTP server
-
-2. Compile the source code with following command
-
-	* Without CMake
-	```
-	$ g++ -Wall -O3 -std=c++2a main.cpp -o server 
-	```
-	* With CMake
-	```
-	$ (mkdir build && cd build && cmake .. && make) #Now, the binaries will be compiled and built.
-	```
-
-3. Add the routing configuration to the "routes.conf" for the Application server (Deals with Directory traversal vulnerability by checking Useragent's resource request)
-
-```
-Format:  <Path to Html> SPACE /<Html file name>
-
-Example: "./html_src/file_one.html /file_one.html"
-```
-
-4. Checking the SSL Connection and performing a TLS Handshake with a OpenSSL's secure client (testing)
-
-```
-$ openssl s_client -connect localhost:4445 #By default on the source code, 4445 is the SSL port	
-depth=0 C = DE, ST = Some-State, O = Internet Widgits Pty Ltd
-verify error:num=18:self signed certificate
-verify return:1
-depth=0 C = DE, ST = Some-State, O = Internet Widgits Pty Ltd
-verify return:1
----
-Certificate chain
- 0 s:C = DE, ST = Some-State, O = Internet Widgits Pty Ltd
-   i:C = DE, ST = Some-State, O = Internet Widgits Pty Ltd
----
-Server certificate
-.....
-.....
-.....
-GET / HTTP/1.1
-(get the contents of index.html, If everything works, Congress!)
+$ curl --insecure -v -H "Content-Type: application/json" -d '{"value_one":123,"value_two":"Hello"}' https://127.0.0.1:9876/poster
+*   Trying 127.0.0.1:9876...
+* Connected to 127.0.0.1 (127.0.0.1) port 9876 (#0)
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: /cacert.pem
+  CApath: none
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server did not agree to a protocol
+* Server certificate:
+*  subject: C=DE; ST=Some-State; O=Internet Widgits Pty Ltd
+*  start date: Nov 28 02:56:27 2020 GMT
+*  expire date: Nov 28 02:56:27 2021 GMT
+*  issuer: C=DE; ST=Some-State; O=Internet Widgits Pty Ltd
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+> POST /poster HTTP/1.1
+> Host: 127.0.0.1:9876
+> User-Agent: curl/7.71.1
+> Accept: */*
+> Content-Type: application/json
+> Content-Length: 37
+............
+............
 ```
 
-sidenote: You might see the name "sapi01" on some files, Its just my another github account. It is me ;)
+![image](https://github.com/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231/blob/master/HTTP-Server-Arch.jpg)
+
+#### This project is under active development.
+
+sidenode: sapi01 is my another Git account

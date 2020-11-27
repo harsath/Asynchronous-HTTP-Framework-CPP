@@ -45,15 +45,13 @@ add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
 add_subdirectory(./test)
 
-set_target_properties(
-        ${PROJECT_NAME}
-        PROPERTIES LINKER_LANGUAGE CXX
-        )
-
+<<<<<<< HEAD
+=======
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 find_package(OpenSSL REQUIRED)
 
+>>>>>>> 0a5ecc2... CMakeLists target property edits
 add_executable(
 	${PROJECT_NAME}
 	${EXEC_FILES}
@@ -62,11 +60,14 @@ add_executable(
 target_link_libraries(
 	${PROJECT_NAME}
 	libhttp
-	OpenSSL::Crypto
-        OpenSSL::SSL
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
 	)
+
+set_target_properties(
+        ${PROJECT_NAME}
+        PROPERTIES LINKER_LANGUAGE CXX
+        )
 
 target_compile_options(
 	${PROJECT_NAME}
