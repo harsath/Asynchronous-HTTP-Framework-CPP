@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <memory>
+#include <openssl/ossl_typ.h>
 #include <string>
 #include <fstream>
 #include <sys/socket.h>
@@ -37,6 +38,7 @@
 #include <netinet/in.h>
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
+#include "HTTPSSLHelpers.hpp"
 #include "HTTPHandler.hpp"
 #include "HTTPParserRoutine.hpp"
 #include "HTTPLogHelpers.hpp"
@@ -81,9 +83,8 @@ namespace HTTP::HTTPAcceptor{
 			HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
 			constexpr static std::size_t _acceptor_read_buff_size = 2048;
 			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
-			// std::string _acceptor_read_buff;
-			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr{nullptr};
-			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext{nullptr};
+			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
+			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
 		public:
 			explicit HTTPAcceptorPlainText(){}
 			void HTTPStreamSock(
@@ -100,6 +101,35 @@ namespace HTTP::HTTPAcceptor{
 			~HTTPAcceptorPlainText() = default;
 	};
 
-	// TODO: HTTPAcceptorSSL implementation
+	class HTTPAcceptorSSL final : public HTTPAcceptor{
+		private:
+			std::string _server_addr;
+			std::uint16_t _server_port;
+			int _server_backlog;
+			struct sockaddr_in _server_sockaddr, _client_sockaddr;
+			int _server_sock_fd;
+			HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
+			constexpr static std::size_t _acceptor_read_buff_size = 2048;
+			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
+			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
+			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
+			std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> _SSLContext;
+		public:
+			explicit HTTPAcceptorSSL(){}
+			void HTTPStreamSock(
+					const std::string& server_addr,
+					const std::uint16_t server_port,
+					int server_backlog,
+					HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
+					const std::string& path_to_root,
+					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
+					const std::string& ssl_cert = "",
+					const std::string& ssl_private_key = ""
+					) noexcept override;
+			void HTTPStreamAccept() noexcept override;
+			~HTTPAcceptorSSL() = default;
+
+	};
+
 
 } // end namespace HTTP::HTTPAcceptor

@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <openssl/ossl_typ.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unordered_map>
@@ -34,6 +35,7 @@
 #include <fmt/format.h>
 #include "HTTPConstants.hpp"
 #include "HTTPLogHelpers.hpp"
+#include "HTTPSSLHelpers.hpp"
 #include <filesystem>
 
 namespace HTTP::HTTPHelpers{
@@ -42,6 +44,7 @@ namespace HTTP::HTTPHelpers{
 		int HTTPClientFD;
 		HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTPResponseState;
 		LOG::LogMessage HTTPLogHolder;
+		std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter> SSLConnectionHandler;
 	};
 
 	struct Post_keyvalue{
