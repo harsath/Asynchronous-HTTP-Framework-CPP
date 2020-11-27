@@ -148,7 +148,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 
 		this->_HTTPContext->SSLConnectionHandler = HTTP::SSL::SSLConnectionAccept(this->_SSLContext.get(), client_fd);
 
-		HTTP::HTTPHelpers::read_date(client_fd, this->_acceptor_read_buff, this->_acceptor_read_buff_size, 0);
+		HTTP::SSL::ssl_read_data(this->_HTTPContext->SSLConnectionHandler.get(), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
 
 		this->_HTTPContext->HTTPClientFD = client_fd;
 		this->_HTTPContext->HTTPLogHolder.client_ip = inet_ntoa(this->_client_sockaddr.sin_addr);
@@ -156,7 +156,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 		this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
 
 		HTTP::HTTPHelpers::close_connection(client_fd);
+
 		::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
-		std::cout << "HTTP-Transaction done\n";
+		std::cout << "HTTPS-Transaction done\n";
 	}
 }

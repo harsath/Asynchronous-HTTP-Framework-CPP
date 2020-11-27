@@ -18,7 +18,6 @@ namespace HTTP::SSL{
 		EVP_cleanup();
 	}
 
-
 	struct SSL_CTX_Deleter{
 		void operator()(SSL_CTX* ssl_ctx){
 			::SSL_CTX_free(ssl_ctx);
@@ -74,9 +73,20 @@ namespace HTTP::SSL{
 		return SSLConnHandler;
 	}
 
-	// inline void SSL_read_date(SSL* ssl, char* client_read_buffer, std::size_t client_read_buffer_size){ // ERROR: variable has incomplete type void
-        //
-	// }
+	inline void ssl_read_data(::SSL* ssl, char* client_read_buffer, std::size_t client_read_buffer_size){
+		int ssl_ret = ::SSL_read(ssl, client_read_buffer, client_read_buffer_size);
+		if(ssl_ret < 0){
+			ERR_print_errors_fp(stderr);
+			::exit(EXIT_FAILURE);
+		}
+	}
 
+	inline void ssl_write_data(::SSL* ssl, const char* client_write_buffer, std::size_t client_write_buffer_size){
+		int ssl_ret = ::SSL_write(ssl, client_write_buffer, client_write_buffer_size);
+		if(ssl_ret <= 0){
+			ERR_print_errors_fp(stderr);
+			::exit(EXIT_FAILURE);
+		}
+	}
 
 } // end namespace HTTP::SSL

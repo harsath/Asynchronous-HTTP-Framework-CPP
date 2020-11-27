@@ -157,7 +157,11 @@ void HTTP::HTTPHandler::HTTPResponseProcessor(
 				HTTPResponseMessage->BuildRawResponseMessage()
 				);
 	}else{
-		// TODO SSL-Handler
+		std::unique_ptr<HTTP::HTTPSSLResponder> http_responder =
+			std::make_unique<HTTP::HTTPSSLResponder>();
+		http_responder->write_to_socket(
+				std::move(HTTPContext),
+				HTTPResponseMessage->BuildRawResponseMessage());
 	}
 }
 
