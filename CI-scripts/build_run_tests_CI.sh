@@ -9,6 +9,6 @@ if ! [[ -d "build" ]]; then
 		./$TEST_BINARY_NAME
 	fi
 else
-	echo -e "[ERROR] There is no routes.conf file\n"
+	echo -e "[ERROR] build dir already exists; remove that\n"
 	exit 2
 fi

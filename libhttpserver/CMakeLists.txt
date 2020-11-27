@@ -38,6 +38,7 @@ set(
 	./HTTPParserRoutine.hpp
 	./HTTPResponder.hpp
 	./HTTPResponder.cpp
+	./HTTPSSLHelpers.hpp
 	)
 add_library(
 	${LIB_BIN_NAME} 
