@@ -37,14 +37,17 @@ int main(int argc, const char* argv[]){
 
 	std::vector<HTTP::HTTPHandler::HTTPPostEndpoint> post_endpoint = { {"/poster","application/json", call_back} };
 
-	std::unique_ptr<HTTP::HTTPAcceptor::HTTPAcceptor> http_acceptor = std::make_unique<HTTP::HTTPAcceptor::HTTPAcceptorPlainText>();
+	std::unique_ptr<HTTP::HTTPAcceptor::HTTPAcceptor> http_acceptor = std::make_unique<HTTP::HTTPAcceptor::HTTPAcceptorSSL>();
 	http_acceptor->HTTPStreamSock(
 			"127.0.0.1", 
 			9876,
 			10, 
 			HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER, 
 			"./configs/html_src",
-			post_endpoint);
+			post_endpoint,
+			"./cert.pem",
+			"./key.pem"
+			);
 	http_acceptor->HTTPStreamAccept();
 
 	return 0;

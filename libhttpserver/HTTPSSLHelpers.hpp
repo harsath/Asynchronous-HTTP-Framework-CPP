@@ -55,7 +55,7 @@ namespace HTTP::SSL{
 		return SSLContext;
 	}
 
-	std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> HTTPConfigSSLContext(const std::string& SSL_cert_path, const std::string& SSL_private_key_path){
+	inline std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> HTTPConfigSSLContext(const std::string& SSL_cert_path, const std::string& SSL_private_key_path){
 		HTTP::SSL::_InitSSL();
 		std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> SSLContext{_SSLCreateContext()};
 		HTTP::SSL::_SSLConfigureContext(SSLContext.get(), SSL_cert_path.c_str(), SSL_private_key_path.c_str());
