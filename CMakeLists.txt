@@ -45,13 +45,10 @@ add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
 add_subdirectory(./test)
 
-<<<<<<< HEAD
-=======
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 
 find_package(OpenSSL REQUIRED)
 
->>>>>>> 0a5ecc2... CMakeLists target property edits
 add_executable(
 	${PROJECT_NAME}
 	${EXEC_FILES}
