@@ -1,5 +1,5 @@
 ### SSL HTTP Application Server C++ Implementation
-[![Build Status](https://travis-ci.org/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231.svg?branch=master)](https://travis-ci.org/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)    ![GitHub](https://img.shields.io/github/license/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)
+![Linux Actions Status](https://github.com/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231/workflows/Linux/badge.svg) ![GitHub](https://img.shields.io/github/license/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)
 
 ```
 Project  : C++ SSL HTTP Application Server & Parser Implementation (from scratch)
