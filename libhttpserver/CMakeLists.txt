@@ -63,6 +63,6 @@ target_link_libraries(
 	fmt::fmt-header-only
 	)
 
-target_compile_options(
-	${LIB_BIN_NAME} 
-	PRIVATE -g)
+# target_compile_options(
+# 	${LIB_BIN_NAME} 
+# 	PRIVATE -g)

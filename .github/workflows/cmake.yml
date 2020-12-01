@@ -1,0 +1,51 @@
+name: CMake build
+on: [push, pull_request]
+env:
+        CMAKE_VERSION: 3.18.3
+        BUILD_TYPE: Release
+
+jobs:
+        build:
+                name: ${{ matrix.config.name }}
+                runs-on: ${{ matrix.config.os }}
+                strategy:
+                        fail-fast: false
+                        matrix:
+                                config:
+                                        - {
+                                                name: "Ubuntu Latest GCC", artifact: "Linux.7z",
+                                                os: ubuntu-latest,
+                                                cc: "gcc", cxx: "g++"
+                                          }
+                        steps:
+                                - uses: actions/checkout@v1
+                                - name: Print env
+                                  run: |
+                                        echo github.event.action: ${{ github.event.action }}
+                                        echo github.event_name: ${{ github.event_name }}
+                                - name: Installing dependencies for Ubuntu Linux
+                                  run: |
+                                        sudo apt-get update -y
+                                        sudo apt install libcrypto++-dev libssl-dev openssl -y
+                                        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+                                        sudo apt install cmake -y
+                                        sudo apt install gcc-9 g++-9
+                                        echo -e "\nGCC VERSION:\n"
+                                        gcc --version
+                                        echo -e "\nCMake VERSION:\n"
+                                        cmake --version
+                                - name: Configuring and Build
+                                  shell: bash
+                                  run: |
+                                        TEST_BINARY_NAME="./test/HTTPTest"
+                                        if ! [[ -d "build" ]]; then
+                                                mkdir build && cd build
+                                                cmake -D CMAKE_CXX_FLAGS="-Wall -O3 -g" .. && make
+                                                if [[ -f ${TEST_BINARY_NAME} ]]; then
+                                                        ./$TEST_BINARY_NAME
+                                                fi
+                                        else
+                                                echo -e "[ERROR] build dir already exists; remove that\n"
+                                                exit 2
+                                        fi
+

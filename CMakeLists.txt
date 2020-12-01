@@ -45,10 +45,6 @@ add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
 add_subdirectory(./test)
 
-set(OPENSSL_USE_STATIC_LIBS TRUE)
-
-find_package(OpenSSL REQUIRED)
-
 add_executable(
 	${PROJECT_NAME}
 	${EXEC_FILES}
@@ -66,8 +62,8 @@ set_target_properties(
         PROPERTIES LINKER_LANGUAGE CXX
         )
 
-target_compile_options(
-	${PROJECT_NAME}
-	PRIVATE
-	-Wall -O3
-	)
+# target_compile_options(
+# 	${PROJECT_NAME}
+# 	PRIVATE
+# 	-Wall -O3
+# 	)
