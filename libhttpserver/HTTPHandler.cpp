@@ -2,6 +2,7 @@
 #include "HTTPConstants.hpp"
 #include "HTTPHeaders.hpp"
 #include "HTTPHelpers.hpp"
+#include "HTTPLogHelpers.hpp"
 #include "HTTPMessage.hpp"
 #include "HTTPParserRoutine.hpp"
 #include "HTTPResponder.hpp"

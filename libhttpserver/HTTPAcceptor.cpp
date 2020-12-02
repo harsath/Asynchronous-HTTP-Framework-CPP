@@ -1,4 +1,6 @@
 #include "HTTPAcceptor.hpp"
+#include "HTTPLogHelpers.hpp"
+#include "HTTPResponder.hpp"
 #include "HTTPSSLHelpers.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
@@ -56,6 +58,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 	for(std::size_t i{}; i < http_post_endpoints.size(); i++){
 		this->_http_handler_ptr->HTTPCreateEndpoint(std::move(http_post_endpoints.at(i)));	
 	}
+	this->_HTTPLogHandler = new HTTP::LOG::AccessContext("HTTP-Plaintext.log");
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
@@ -68,6 +71,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 		this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
 		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER;
 		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
 						reinterpret_cast<socklen_t*>(&addr_len));
 		HTTP::HTTPHelpers::err_check(client_fd, "linux accept()");
@@ -77,12 +81,19 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 		this->_HTTPContext->HTTPClientFD = client_fd;
 		this->_HTTPContext->HTTPLogHolder.client_ip = inet_ntoa(this->_client_sockaddr.sin_addr);
 
-		this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
+		this->_http_handler_ptr->HTTPHandleConnection(
+				std::move(this->_HTTPContext), 
+				this->_acceptor_read_buff, 
+				this->_acceptor_read_buff_size);
 
 		HTTP::HTTPHelpers::close_connection(client_fd);
 		::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
 		std::cout << "HTTP-Transaction done\n";
 	}
+}
+
+HTTP::HTTPAcceptor::HTTPAcceptorPlainText::~HTTPAcceptorPlainText(){
+	delete this->_HTTPLogHandler;
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamSock(
@@ -130,11 +141,14 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamSock(
 	for(std::size_t i{}; i < http_post_endpoints.size(); i++){
 		this->_http_handler_ptr->HTTPCreateEndpoint(std::move(http_post_endpoints.at(i)));	
 	}
+
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 	int return_check = listen(this->_server_sock_fd, this->_server_backlog);
 	HTTP::HTTPHelpers::err_check(return_check, "linux listen()");
+
+	this->_HTTPLogHandler = new HTTP::LOG::AccessContext("HTTP-SSL.log");
 
 	int addr_len = sizeof(this->_server_addr);
 
@@ -142,6 +156,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 		this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
 		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER;
 		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
 						reinterpret_cast<socklen_t*>(&addr_len));
 		HTTP::HTTPHelpers::err_check(client_fd, "linux accept()");
@@ -160,4 +175,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 		::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
 		std::cout << "HTTPS-Transaction done\n";
 	}
+}
+
+HTTP::HTTPAcceptor::HTTPAcceptorSSL::~HTTPAcceptorSSL(){
+	delete this->_HTTPLogHandler;
 }

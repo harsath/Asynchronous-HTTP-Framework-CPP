@@ -85,6 +85,7 @@ namespace HTTP::HTTPAcceptor{
 			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
 			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
 			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
+			HTTP::LOG::LoggerHelper* _HTTPLogHandler;
 		public:
 			explicit HTTPAcceptorPlainText(){}
 			void HTTPStreamSock(
@@ -98,7 +99,7 @@ namespace HTTP::HTTPAcceptor{
 					const std::string& ssl_private_key = ""
 					) noexcept override;
 			void HTTPStreamAccept() noexcept override;
-			~HTTPAcceptorPlainText() = default;
+			~HTTPAcceptorPlainText();
 	};
 
 	class HTTPAcceptorSSL final : public HTTPAcceptor{
@@ -114,6 +115,7 @@ namespace HTTP::HTTPAcceptor{
 			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
 			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
 			std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> _SSLContext;
+			HTTP::LOG::LoggerHelper* _HTTPLogHandler;
 		public:
 			explicit HTTPAcceptorSSL(){}
 			void HTTPStreamSock(
@@ -127,7 +129,7 @@ namespace HTTP::HTTPAcceptor{
 					const std::string& ssl_private_key = ""
 					) noexcept override;
 			void HTTPStreamAccept() noexcept override;
-			~HTTPAcceptorSSL() = default;
+			~HTTPAcceptorSSL();
 
 	};
 

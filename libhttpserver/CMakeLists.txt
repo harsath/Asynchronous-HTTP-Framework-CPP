@@ -49,6 +49,10 @@ set_target_properties(
 	PROPERTIES LINKER_LANGUAGE CXX
 	)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+find_package(Threads REQUIRED)
+
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 set(OPENSSL_USE_STATIC_LIBS TRUE)
@@ -61,6 +65,7 @@ target_link_libraries(
 	OpenSSL::SSL
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
+	Threads::Threads
 	)
 
 # target_compile_options(

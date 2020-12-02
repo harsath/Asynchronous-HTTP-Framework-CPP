@@ -44,6 +44,7 @@ namespace HTTP::HTTPHelpers{
 		int HTTPClientFD;
 		HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTPResponseState;
 		LOG::LogMessage HTTPLogHolder;
+		const HTTP::LOG::LoggerHelper* HTTPLogHandler;
 		std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter> SSLConnectionHandler;
 	};
 
@@ -80,7 +81,13 @@ namespace HTTP::HTTPHelpers{
 		return time;
 	}
 
-	template<typename T> inline void write_log_to_file(const std::unique_ptr<T>& log_handler, const HTTP::LOG::LogMessage& log_struct){
+	// template<typename T> inline void write_log_to_file(std::unique_ptr<T> log_handler_, HTTP::LOG::LogMessage&& log_struct){
+	// 	std::unique_ptr<HTTP::LOG::LoggerHelper> log_handler = std::move(log_handler_);
+	// 	log_handler->log(fmt::format("{0} {1} {2} {3} {4}", log_struct.client_ip, log_struct.date, 
+	// 				log_struct.resource, log_struct.useragent, log_struct.log_message));
+	// }
+
+	inline void write_log_to_file(const HTTP::LOG::LoggerHelper* log_handler, HTTP::LOG::LogMessage&& log_struct){
 		log_handler->log(fmt::format("{0} {1} {2} {3} {4}", log_struct.client_ip, log_struct.date, 
 					log_struct.resource, log_struct.useragent, log_struct.log_message));
 	}
