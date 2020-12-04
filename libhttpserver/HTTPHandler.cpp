@@ -8,6 +8,7 @@
 #include "HTTPResponder.hpp"
 #include <memory>
 #include <string>
+#include <variant>
 
 HTTP::HTTPHandler::HTTPHandler::HTTPHandler(const std::string& path_to_root){
 	this->_path_to_routesfile = std::move(path_to_root);
@@ -21,6 +22,13 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
 				std::size_t raw_read_size){
 
 	this->_HTTPContext = std::move(HTTPContext);
+
+	// SSL-client Handshake packet to a plaintext port(close connection)
+	if(!(raw_read_buffer[0] ^ 0x16) && 
+			(_HTTPContext->HTTPServerType == HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER) && 
+			!(raw_read_buffer[1] ^ 0x03)){
+		return;
+	}
 
 	HTTP::HTTPConst::HTTP_RESPONSE_CODE tmp_http_message_paser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 	this->_HTTPMessage = std::make_unique<HTTPMessage>(

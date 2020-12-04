@@ -17,7 +17,8 @@ HTTP::HTTPMessage::HTTPMessage(
 
 	std::string request_line = HTTP::HTTPParser::request_line_splitter(raw_read_buffer);
 	std::vector<std::string> request_line_splitted = HTTP::HTTPParser::client_request_line_parser(request_line);
-	
+	if(request_line.size() <= 1){ return; }
+
 	this->_request_type = request_line_splitted.at(0);
 	this->_request_target = request_line_splitted.at(1);
 	this->_http_version = request_line_splitted.at(2);
@@ -133,6 +134,9 @@ std::string HTTP::HTTPMessage::BuildRawResponseMessage() const noexcept {
 			break;
 		case HTTP_RESPONSE_CODE::CREATED:
 			returner += "201 Created\r\n";
+			break;
+		case HTTP_RESPONSE_CODE::MOVED_PERMANENTLY:
+			returner += "301 Moved Permanently\r\n";
 			break;
 	}
 	for(const std::pair<std::string, std::string>& header_pair : this->_HTTPHeader->GetHeaderPairVector()){

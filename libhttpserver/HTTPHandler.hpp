@@ -40,6 +40,7 @@
 #include "HTTPHelpers.hpp"
 #include "HTTPLogHelpers.hpp"
 #include "HTTPMessage.hpp"
+#include <variant>
 #include <vector>
 #include <unordered_map>
 #include <functional>

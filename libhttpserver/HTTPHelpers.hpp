@@ -39,6 +39,11 @@
 #include <filesystem>
 
 namespace HTTP::HTTPHelpers{
+	struct HTTPServerInfo{
+		 std::string ServerIP;
+		 std::string ServerPort;
+	};
+
 	struct HTTPTransactionContext{
 		HTTP::HTTPConst::HTTP_SERVER_TYPE HTTPServerType;
 		int HTTPClientFD;
@@ -46,6 +51,8 @@ namespace HTTP::HTTPHelpers{
 		LOG::LogMessage HTTPLogHolder;
 		const HTTP::LOG::LoggerHelper* HTTPLogHandler;
 		std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter> SSLConnectionHandler;
+		bool HTTPWritten{false};
+		HTTPServerInfo ServerInfo;		
 	};
 
 	struct Post_keyvalue{
@@ -81,11 +88,13 @@ namespace HTTP::HTTPHelpers{
 		return time;
 	}
 
-	// template<typename T> inline void write_log_to_file(std::unique_ptr<T> log_handler_, HTTP::LOG::LogMessage&& log_struct){
-	// 	std::unique_ptr<HTTP::LOG::LoggerHelper> log_handler = std::move(log_handler_);
-	// 	log_handler->log(fmt::format("{0} {1} {2} {3} {4}", log_struct.client_ip, log_struct.date, 
-	// 				log_struct.resource, log_struct.useragent, log_struct.log_message));
-	// }
+	inline int accept_err_handler(int net_fd, const std::string& err_str){
+		if(net_fd < 0){
+			std::cout << err_str << "\n";
+			return -1;
+		}
+		return 1;
+	}
 
 	inline void write_log_to_file(const HTTP::LOG::LoggerHelper* log_handler, HTTP::LOG::LogMessage&& log_struct){
 		log_handler->log(fmt::format("{0} {1} {2} {3} {4}", log_struct.client_ip, log_struct.date, 

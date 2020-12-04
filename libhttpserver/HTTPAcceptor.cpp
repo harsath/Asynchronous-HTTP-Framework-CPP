@@ -69,11 +69,15 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 
 	for(;;){
 		this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
+		this->_HTTPContext->ServerInfo.ServerIP = this->_server_addr;
+		this->_HTTPContext->ServerInfo.ServerPort = this->_server_port;
 		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER;
 		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
 						reinterpret_cast<socklen_t*>(&addr_len));
+		int sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
+		if(sentinel_check == -1){ continue; }
 		HTTP::HTTPHelpers::err_check(client_fd, "linux accept()");
 
 		HTTP::HTTPHelpers::read_date(client_fd, this->_acceptor_read_buff, this->_acceptor_read_buff_size, 0);
@@ -154,11 +158,15 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 
 	for(;;){
 		this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
+		this->_HTTPContext->ServerInfo.ServerIP = this->_server_addr;
+		this->_HTTPContext->ServerInfo.ServerPort = this->_server_port;
 		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER;
 		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
 						reinterpret_cast<socklen_t*>(&addr_len));
+		int sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
+		if(sentinel_check == -1){ continue; }
 		HTTP::HTTPHelpers::err_check(client_fd, "linux accept()");
 
 		this->_HTTPContext->SSLConnectionHandler = HTTP::SSL::SSLConnectionAccept(this->_SSLContext.get(), client_fd);
