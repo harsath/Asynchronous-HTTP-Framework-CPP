@@ -48,23 +48,23 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
 
 	this->_HTTPContext->HTTPLogHolder.date = HTTP::HTTPHelpers::get_today_date_full();
 
-	switch(this->_HTTPContext->HTTPResponseState){
-		case HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK:
-			this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
-			break;
-		case HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST:
-			this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 400 Bad Request";
-			break;
-		case HTTP::HTTPConst::HTTP_RESPONSE_CODE::FORBIDDEN:
-			this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 403 Forbidden";
-			break;
-		case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_ACCEPTABLE:
-			this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 406 Not Acceptable";
-			break;
-		case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND:
-			this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
-			break;
-	}
+	// switch(this->_HTTPContext->HTTPResponseState){
+	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK:
+	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
+	// 		break;
+	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST:
+	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 400 Bad Request";
+	// 		break;
+	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::FORBIDDEN:
+	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 403 Forbidden";
+	// 		break;
+	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_ACCEPTABLE:
+	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 406 Not Acceptable";
+	// 		break;
+	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND:
+	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
+	// 		break;
+	// }
 	
 	this->HTTPResponseHandler();
 }
@@ -194,6 +194,35 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 
 			HTTPResponseMessage = post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).second(std::move(HTTPClientMessage));
 			
+			switch(HTTPResponseMessage->GetResponseCode()){
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 400 Bad Request";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::FORBIDDEN:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 403 Forbidden";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_ACCEPTABLE:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 406 Not Acceptable";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNSUPPORTED_MEDIA_TYPE:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 415 Unsupported Media Type";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 201 Created";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::METHOD_NOT_ALLOWED:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 405 Method Not Allowed";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::MOVED_PERMANENTLY:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 301 Moved Permanently";
+					break;
+			}
 		}else{
 			std::string raw_body = "This endpoint only supports " + post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).first;
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
