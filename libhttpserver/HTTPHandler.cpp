@@ -48,24 +48,6 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
 
 	this->_HTTPContext->HTTPLogHolder.date = HTTP::HTTPHelpers::get_today_date_full();
 
-	// switch(this->_HTTPContext->HTTPResponseState){
-	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK:
-	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
-	// 		break;
-	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST:
-	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 400 Bad Request";
-	// 		break;
-	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::FORBIDDEN:
-	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 403 Forbidden";
-	// 		break;
-	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_ACCEPTABLE:
-	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 406 Not Acceptable";
-	// 		break;
-	// 	case HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND:
-	// 		this->_HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
-	// 		break;
-	// }
-	
 	this->HTTPResponseHandler();
 }
 
@@ -114,6 +96,7 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 		HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(response_body.size()));
 		HTTPResponseMessage->SetRawBody(std::move(response_body));
+		HTTPContext->HTTPLogHolder.log_message = "Serving user with 400 Bad Request";
 	}else{
 		// Checking if the target-resource matches the one from the www-root
 		if(filename_and_filepath_map.contains(HTTPClientMessage->GetTargetResource())){ // If so
@@ -126,6 +109,8 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
 			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
+
 		}else if(HTTPClientMessage->GetTargetResource() == "/"){
 			std::string raw_body = HTTP::HTTPHelpers::read_file(
 					filename_and_filepath_map.at("/index.html")
@@ -136,6 +121,7 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
 			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
 
 		}else{
 			std::string raw_body = "<html><h2> Oops, 404 Not Found :( </h2></html>";
@@ -145,6 +131,7 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
 			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
 		}
 	}
 	
@@ -231,6 +218,7 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 			HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
 			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			HTTPContext->HTTPLogHolder.log_message = "Serving user with 415 Unsupported Media Type";
 		}
 	}else{
 		std::string raw_body = "405 Method Not Allowed. No such endpoints";
@@ -240,6 +228,7 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
 		HTTPResponseMessage->SetRawBody(std::move(raw_body));
+		HTTPContext->HTTPLogHolder.log_message = "Serving user with 405 Method Not Allowed";
 	}
 
 	HTTP::HTTPHandler::HTTPResponseProcessor(std::move(HTTPContext), std::move(HTTPResponseMessage));
