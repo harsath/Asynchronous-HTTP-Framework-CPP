@@ -47,9 +47,16 @@ std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> 
 
 		return HTTPResponseMessage;
 	}catch(const std::exception& e){
-		std::cout << e.what() << std::endl;
-		std::string returner_exception = "Invalid POST data to JSON endpoint";
-		return nullptr;
+		std::cout << "Invalid request from user-agent\n";
+                std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+                std::string returner = "Invalid request body, rejected by origin-server";
+                HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+                HTTPResponseMessage->SetResponseType("Bad Request");
+                HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
+                HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
+                HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
+                HTTPResponseMessage->SetRawBody(std::move(returner));
+                return HTTPResponseMessage;
 	}
 }
 
