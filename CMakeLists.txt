@@ -40,6 +40,7 @@ enable_testing()
 add_subdirectory(./libhttpserver)
 include_directories(./libhttpserver)
 link_directories(./libhttpserver)
+add_subdirectory(./vendor)
 add_subdirectory(./vendor/json)
 add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
@@ -61,9 +62,3 @@ set_target_properties(
         ${PROJECT_NAME}
         PROPERTIES LINKER_LANGUAGE CXX
         )
-
-# target_compile_options(
-# 	${PROJECT_NAME}
-# 	PRIVATE
-# 	-Wall -O3
-# 	)

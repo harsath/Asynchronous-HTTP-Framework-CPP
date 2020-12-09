@@ -76,23 +76,22 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
 						reinterpret_cast<socklen_t*>(&addr_len));
-		int sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
-		if(sentinel_check == -1){ continue; }
-		HTTP::HTTPHelpers::err_check(client_fd, "linux accept()");
+		bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
+		if(sentinel_check){
+			HTTP::HTTPHelpers::read_date(client_fd, this->_acceptor_read_buff, this->_acceptor_read_buff_size, 0);
 
-		HTTP::HTTPHelpers::read_date(client_fd, this->_acceptor_read_buff, this->_acceptor_read_buff_size, 0);
+			this->_HTTPContext->HTTPClientFD = client_fd;
+			this->_HTTPContext->HTTPLogHolder.client_ip = inet_ntoa(this->_client_sockaddr.sin_addr);
 
-		this->_HTTPContext->HTTPClientFD = client_fd;
-		this->_HTTPContext->HTTPLogHolder.client_ip = inet_ntoa(this->_client_sockaddr.sin_addr);
+			this->_http_handler_ptr->HTTPHandleConnection(
+					std::move(this->_HTTPContext), 
+					this->_acceptor_read_buff, 
+					this->_acceptor_read_buff_size);
 
-		this->_http_handler_ptr->HTTPHandleConnection(
-				std::move(this->_HTTPContext), 
-				this->_acceptor_read_buff, 
-				this->_acceptor_read_buff_size);
-
-		HTTP::HTTPHelpers::close_connection(client_fd);
-		::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
-		std::cout << "HTTP-Transaction done\n";
+			HTTP::HTTPHelpers::close_connection(client_fd);
+			::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
+			std::cout << "HTTP-Transaction done\n";
+		}
 	}
 }
 
@@ -165,23 +164,22 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
 		int client_fd = accept(this->_server_sock_fd, reinterpret_cast<sockaddr*>(&this->_client_sockaddr), 
 						reinterpret_cast<socklen_t*>(&addr_len));
-		int sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
-		if(sentinel_check == -1){ continue; }
-		HTTP::HTTPHelpers::err_check(client_fd, "linux accept()");
+		bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
+		if(sentinel_check){
+			this->_HTTPContext->SSLConnectionHandler = HTTP::SSL::SSLConnectionAccept(this->_SSLContext.get(), client_fd);
 
-		this->_HTTPContext->SSLConnectionHandler = HTTP::SSL::SSLConnectionAccept(this->_SSLContext.get(), client_fd);
+			HTTP::SSL::ssl_read_data(this->_HTTPContext->SSLConnectionHandler.get(), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
 
-		HTTP::SSL::ssl_read_data(this->_HTTPContext->SSLConnectionHandler.get(), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
+			this->_HTTPContext->HTTPClientFD = client_fd;
+			this->_HTTPContext->HTTPLogHolder.client_ip = inet_ntoa(this->_client_sockaddr.sin_addr);
 
-		this->_HTTPContext->HTTPClientFD = client_fd;
-		this->_HTTPContext->HTTPLogHolder.client_ip = inet_ntoa(this->_client_sockaddr.sin_addr);
+			this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
 
-		this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
+			HTTP::HTTPHelpers::close_connection(client_fd);
 
-		HTTP::HTTPHelpers::close_connection(client_fd);
-
-		::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
-		std::cout << "HTTPS-Transaction done\n";
+			::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
+			std::cout << "HTTPS-Transaction done\n";
+		}
 	}
 }
 

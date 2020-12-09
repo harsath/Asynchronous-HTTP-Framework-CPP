@@ -27,7 +27,7 @@ jobs:
                                 sudo apt-get update -y
                                 sudo apt install libcrypto++-dev libssl-dev openssl -y
                                 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-                                sudo apt install cmake -y
+                                sudo apt install cmake curl -y
                                 sudo apt install gcc-9 g++-9
                                 echo -e "\nGCC VERSION:\n"
                                 gcc --version

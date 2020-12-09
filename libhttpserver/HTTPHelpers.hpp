@@ -88,12 +88,12 @@ namespace HTTP::HTTPHelpers{
 		return time;
 	}
 
-	inline int accept_err_handler(int net_fd, const std::string& err_str){
+	inline bool accept_err_handler(int net_fd, const std::string& err_str){
 		if(net_fd < 0){
 			std::cout << err_str << "\n";
-			return -1;
+			return false;
 		}
-		return 1;
+		return true;
 	}
 
 	inline void write_log_to_file(const HTTP::LOG::LoggerHelper* log_handler, HTTP::LOG::LogMessage&& log_struct){
