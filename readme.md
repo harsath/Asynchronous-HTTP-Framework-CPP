@@ -4,7 +4,9 @@
 ```
 Project  : C++ SSL HTTP Application Server & Parser Implementation (from scratch)
 RFC      : 7231
-Language : C++ (with some C UNIX Syscalls and APIs)
+Language : C++ (with POSIX APIs)
+
+This project is under active development
 ```
 
 ##### Steps:
@@ -20,6 +22,8 @@ $ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 4. Copy the the sample html files (or point to your own files) with `$ cp -r ../configs .`
 
 Now, run the server with `./server`
+
+Checkout the `./examples` dir for more info on using Callbacks and REST API examples.
 
 You can checkout the libHTTPserver's architecture in `HTTP-Server-Arch.jpg`
 
@@ -60,6 +64,6 @@ $ curl --insecure -v -H "Content-Type: application/json" -d '{"value_one":123,"v
 
 ![image](https://github.com/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231/blob/master/HTTP-Server-Arch.jpg)
 
-#### This project is under active development.
+
 
 sidenode: sapi01 is my another Git account
