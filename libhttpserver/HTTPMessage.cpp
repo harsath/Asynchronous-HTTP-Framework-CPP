@@ -70,7 +70,7 @@ void HTTP::HTTPMessage::SetRequestType(const std::string &req_type) noexcept {
 	this->_request_type = req_type;
 }
 
-std::string HTTP::HTTPMessage::GetRequestType() const noexcept {
+std::string& HTTP::HTTPMessage::GetRequestType() noexcept {
 	return this->_request_type;
 } 
 
@@ -78,7 +78,7 @@ void HTTP::HTTPMessage::SetTargetResource(const std::string& req_resource) noexc
 	this->_request_target = req_resource;
 }
 
-std::string HTTP::HTTPMessage::GetTargetResource() const noexcept {
+std::string& HTTP::HTTPMessage::GetTargetResource() noexcept {
 	return this->_request_target;
 }
 
@@ -86,7 +86,7 @@ void HTTP::HTTPMessage::SetHTTPVersion(const std::string& http_version) noexcept
 	this->_http_version = http_version;	
 }
 
-std::string HTTP::HTTPMessage::GetHTTPVersion() const noexcept {
+std::string& HTTP::HTTPMessage::GetHTTPVersion() noexcept {
 	return this->_http_version;
 }
 
@@ -102,7 +102,7 @@ void HTTP::HTTPMessage::SetResponseType(const std::string& res_type) noexcept {
 	this->_response_type = res_type;
 }
 
-std::string HTTP::HTTPMessage::GetResponseType() const noexcept {
+std::string& HTTP::HTTPMessage::GetResponseType() noexcept {
 	return this->_response_type;
 }
 
@@ -154,6 +154,6 @@ void HTTP::HTTPMessage::SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_
 	this->_http_parser_status = res_code;
 }
 
-std::string HTTP::HTTPMessage::GetRawBody() const noexcept {
+std::string& HTTP::HTTPMessage::GetRawBody() noexcept {
 	return this->_raw_body;
 }
