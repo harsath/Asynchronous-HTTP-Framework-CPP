@@ -1,7 +1,9 @@
 #include "HTTPParser.hpp"
 #include "HTTPMessage.hpp"
+#include "HTTPHelpers.hpp"
 #include <cctype>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace Parser = HTTP::HTTP1Parser;
@@ -12,7 +14,7 @@ Parser::HTTPParser::HTTPParser(const char* parser_input) :
 		this->_HTTPMessage = std::make_unique<HTTP::HTTPMessage>();
 	}
 
-inline bool Parser::HTTPParser::IsProcessingHeader() const noexcept {
+bool Parser::HTTPParser::IsProcessingHeader() const noexcept {
 	switch(this->State){
 		case ParserState::HEADER_NAME_BEGIN:
 		case ParserState::HEADER_NAME:
@@ -26,7 +28,7 @@ inline bool Parser::HTTPParser::IsProcessingHeader() const noexcept {
 	}
 }
 
-inline bool Parser::HTTPParser::IsProcessingBody() const noexcept {
+bool Parser::HTTPParser::IsProcessingBody() const noexcept {
 	switch(this->State){
 		case ParserState::CONTENT_BEGIN:
 		case ParserState::CONTENT:
@@ -66,6 +68,7 @@ inline bool Parser::HTTPParser::IsProcessingBody() const noexcept {
 std::size_t Parser::HTTPParser::ParseBytes(){
 	using namespace Helper;
 	using namespace Parser;
+
 	auto increment_byte = [this](size_t num = 1) -> void {
 		this->_parser_input += num;
 		this->_parsed_bytes += num;
@@ -95,14 +98,15 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 					if(is_token(*_parser_input)){
 						// No state transition
 						_HTTPMessage->GetRequestType().push_back(*_parser_input);
+						std::cout << "Commong here" << std::endl;
 						increment_byte();
 					}else if(*_parser_input == static_cast<char>(LexConst::SP)){
 						// We parsed Request-Method, Let's begin parsing Request-URI
 						this->State = ParserState::REQUEST_RESOURCE_BEGIN;
 						increment_byte();
 					}
+					break;
 				}
-				break;
 			case ParserState::REQUEST_RESOURCE_BEGIN:
 				{
 					if(std::isprint(*_parser_input)){
@@ -207,6 +211,7 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 				{
 					if(is_text(*_parser_input)){
 						this->State = ParserState::HEADER_VALUE;
+						increment_byte();
 					}else if(*_parser_input == static_cast<char>(LexConst::CR)){
 						this->State = ParserState::HEADER_END_LF;
 						increment_byte();
@@ -215,23 +220,76 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 					}
 					break;
 				}
+			case ParserState::HEADER_VALUE:
+				{
+					if(*_parser_input == static_cast<char>(LexConst::CR)){
+						this->State = ParserState::HEADER_VALUE_LF;
+						increment_byte();
+					}else if(is_text(*_parser_input)){
+						tmp_header_value.push_back(*_parser_input);
+						increment_byte();
+					}else{
+						this->State = ParserState::PROTOCOL_ERROR;
+					}
+					break;
+				}
+			case ParserState::HEADER_VALUE_LF:
+				{
+					if(*_parser_input == static_cast<char>(LexConst::CR)){
+						this->State = ParserState::HEADER_VALUE_END;
+						increment_byte();
+					}else{
+						this->State = ParserState::PROTOCOL_ERROR;
+					}
+					break;
+				}
+			case ParserState::HEADER_VALUE_END:
+				{
+					this->_HTTPMessage->AddHeader(tmp_header_name, tmp_header_value);
+					tmp_header_name.clear();
+					tmp_header_value.clear();
+					this->State = ParserState::HEADER_NAME_BEGIN;
+					break;
+				}
+			case ParserState::HEADER_END_LF:
+				{
+					if(*_parser_input == static_cast<char>(LexConst::LF)){
+						if(HTTPHelpers::case_insensitive_string_cmp(
+									this->_HTTPMessage->GetRequestType(),
+									"GET")){
+							goto parsing_done;
+						}
+					}
+				}
+			case ParserState::PROTOCOL_ERROR:
+				{
+					this->_parse_fail = true;
+					goto parsing_done;
+				}
 
 		}
+parsing_done:
+	this->_finished_parsing = true;
+
 	}
 		
 	return this->_parsed_bytes;
 }
 
-inline bool Helper::is_char(char value){
+std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> Parser::HTTPParser::GetParsedMessage() noexcept {
+		return {this->_parse_fail, std::move(this->_HTTPMessage)};
+}
+
+bool Helper::is_char(char value){
 	return static_cast<unsigned>(value) <= 127;		
 }
 
-inline bool Helper::is_control(char value){
+bool Helper::is_control(char value){
 	// remember: does not include SP
 	return (value >= 0 && value <= 31) || value == 127;
 }
 
-inline bool Helper::is_separator(char value){
+bool Helper::is_separator(char value){
 	switch(value){
 		case '(':
 		case ')':
@@ -258,11 +316,11 @@ inline bool Helper::is_separator(char value){
 	}
 }
 
-inline bool Helper::is_token(char value){
+bool Helper::is_token(char value){
 	return is_char(value) && !( is_control(value) || is_separator(value));
 }
 
-inline bool Helper::is_text(char value){
+bool Helper::is_text(char value){
 	// any byte except CONTROL-char but including LWS	
 	return !is_control(value) || 
 		value == static_cast<char>(Parser::LexConst::SP) ||

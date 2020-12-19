@@ -39,6 +39,8 @@ set(
 	./HTTPResponder.hpp
 	./HTTPResponder.cpp
 	./HTTPSSLHelpers.hpp
+	./HTTPParser.cpp
+	./HTTPParser.hpp
 	)
 add_library(
 	${LIB_BIN_NAME} 

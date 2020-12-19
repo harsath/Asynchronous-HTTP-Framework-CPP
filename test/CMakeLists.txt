@@ -41,6 +41,7 @@ set(
 	./test-HTTPHeaders.cpp
 	./test-HTTPParserRoutine.cpp
 	./test-HTTPMessage.cpp
+	./test-HTTPParser.cpp
 	)
 
 add_executable(

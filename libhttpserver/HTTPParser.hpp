@@ -15,7 +15,6 @@ namespace HTTP{
 			REQUEST_RESOURCE_BEGIN,
 			REQUEST_RESOURCE,
 			REQUEST_PROTOCOL_BEGIN,
-			REQUEST_PROTOCOL,
 			REQUEST_PROTOCOL_SLASH,
 			REQUEST_PROTOCOL_VERSION,
 			REQUEST_LINE_LF,
@@ -62,7 +61,7 @@ namespace HTTP{
 				bool IsProcessingHeader() const noexcept;
 				bool IsProcessingBody() const noexcept;
 				void SetProcessingBoolean(const MessageParts& set_message_part);
-				std::optional<std::unique_ptr<HTTP::HTTPMessage>> GetParsedMessage() noexcept;
+				std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> GetParsedMessage() noexcept;
 		};
 	} // end namespace HTTP1Parser
 
