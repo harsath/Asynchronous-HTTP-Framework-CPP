@@ -22,7 +22,6 @@ namespace HTTP{
 			// Message-Headers
 			HEADER_NAME_BEGIN = 150,
 			HEADER_NAME,
-			HEADER_COLON,
 			HEADER_VALUE_BEGIN,
 			HEADER_VALUE,
 			HEADER_VALUE_LF,
@@ -63,6 +62,7 @@ namespace HTTP{
 				void SetProcessingBoolean(const MessageParts& set_message_part);
 				std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> GetParsedMessage() noexcept;
 		};
+		inline std::string state_as_string(const ParserState& state);
 	} // end namespace HTTP1Parser
 
 	namespace HTTPParserHelper{

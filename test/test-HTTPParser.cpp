@@ -9,4 +9,5 @@ TEST(HTTPParser_get_request_parser, HTTP11Parser){
 	std::size_t num_bytes = parser.ParseBytes();	
 	std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
 	ASSERT_EQ(parsed_message.second->GetRequestType(), "GET");
+	ASSERT_EQ(parsed_message.second->GetTargetResource(), "/index.php");
 }
