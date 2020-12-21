@@ -55,6 +55,7 @@ namespace HTTP{
 
 			void SetHTTPHeader(std::unique_ptr<HTTPHeaders> headers) noexcept;
 			const std::unique_ptr<HTTPHeaders>& ConstGetHTTPHeader() const noexcept;
+			[[nodiscard]] std::unique_ptr<HTTPHeaders> GetHTTPHeader() noexcept;
 
 			void SetResponseType(const std::string& res_type) noexcept;
 			std::string& GetResponseType() noexcept;
