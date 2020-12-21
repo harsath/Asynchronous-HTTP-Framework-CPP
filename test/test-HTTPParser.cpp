@@ -22,7 +22,6 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		}else{
 			EXPECT_EQ(true, false);
 		}
-
 	}
 
 	{
@@ -80,5 +79,24 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
 		ASSERT_EQ(parsed_message.first, true);
+	}
+
+	{
+		const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/json\r\n\r\none=value_one&two=value_two";
+		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
+		parser.ParseBytes();	
+		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
+		ASSERT_EQ(parsed_message.first, false);
+		ASSERT_EQ(parsed_message.second->GetRawBody(), "one=value_one&two=value_two");
+	}
+
+	{
+		const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/json\r\n\r\n{\"one\":1234, \"two\":\"foo value\"}";
+		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
+		parser.ParseBytes();	
+		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
+		ASSERT_EQ(parsed_message.first, false);
+		ASSERT_EQ(parsed_message.second->GetRawBody(), "{\"one\":1234, \"two\":\"foo value\"}");
+		ASSERT_EQ(parsed_message.second->GetRequestType(), "POST");
 	}
 }

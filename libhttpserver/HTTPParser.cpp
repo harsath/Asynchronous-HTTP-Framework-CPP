@@ -323,12 +323,45 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 									"GET")){
 							Debug(std::cout << "GET Request Parsing done" << std::endl;)
 							parsing_done();
-						}else{ 
-							/* TODO(t0retto): Fix this to compadable for POST! <19-12-20> */
-							parsing_done();
+						}else if(HTTPHelpers::case_insensitive_string_cmp(
+									this->_HTTPMessage->GetRequestType(),
+									"POST")){ 
+							increment_byte();
+							this->State = ParserState::CONTENT_BEGIN;
 						}
 					}else{ 
 						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
+						this->State = ParserState::PROTOCOL_ERROR;
+					}
+					break;
+				}
+			case ParserState::CONTENT_BEGIN:
+				{
+					// I might want to check for the Content-Length, keeping these seperate for future things like Chunk Sizes
+					this->_HTTPMessage->GetRawBody().push_back(*_parser_input);
+					this->State = ParserState::CONTENT;
+					increment_byte();
+					Debug(std::cout << state_as_string(ParserState::CONTENT_BEGIN) << std::endl;)
+					break;
+				}
+			case ParserState::CONTENT:
+				{
+					if(*_parser_input != '\0'){
+						this->_HTTPMessage->GetRawBody().push_back(*_parser_input);
+						this->State = ParserState::CONTENT;
+						Debug(std::cout << state_as_string(ParserState::CONTENT) << std::endl;)
+						increment_byte();
+					}else{
+						this->State = ParserState::CONTENT_END;
+					}
+					break;
+				}
+			case ParserState::CONTENT_END:
+				{
+					if(*_parser_input == '\0'){
+						Debug(std::cout << state_as_string(ParserState::CONTENT_END) << std::endl;)
+						parsing_done();
+					}else{
 						this->State = ParserState::PROTOCOL_ERROR;
 					}
 					break;
