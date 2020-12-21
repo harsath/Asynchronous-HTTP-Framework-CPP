@@ -60,7 +60,7 @@ namespace HTTP{
 				bool IsProcessingHeader() const noexcept;
 				bool IsProcessingBody() const noexcept;
 				void SetProcessingBoolean(const MessageParts& set_message_part);
-				std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> GetParsedMessage() noexcept;
+				[[nodiscard]] std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> GetParsedMessage() noexcept;
 		};
 		inline std::string state_as_string(const ParserState& state);
 	} // end namespace HTTP1Parser

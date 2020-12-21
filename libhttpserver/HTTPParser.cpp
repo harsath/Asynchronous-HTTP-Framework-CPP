@@ -133,7 +133,6 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 						this->State = ParserState::REQUEST_RESOURCE;
 						Debug(std::cout << *_parser_input << std::endl;)
 						Debug(std::cout << state_as_string(ParserState::REQUEST_RESOURCE_BEGIN) << std::endl;)
-						increment_byte();
 					}else{
 						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
 						this->State = ParserState::PROTOCOL_ERROR;
@@ -149,7 +148,7 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 						Debug(std::cout << state_as_string(ParserState::REQUEST_RESOURCE) << " SP " << std::endl;)
 						increment_byte();
 					}else if(std::isprint(*_parser_input)){
-						this->_HTTPMessage->GetTargetResource().push_back(_parsed_bytes);
+						this->_HTTPMessage->GetTargetResource().push_back(*_parser_input);
 						Debug(std::cout << *_parser_input << std::endl;)
 						Debug(std::cout << state_as_string(ParserState::REQUEST_RESOURCE) << std::endl;)
 						increment_byte();
@@ -324,8 +323,11 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 									"GET")){
 							Debug(std::cout << "GET Request Parsing done" << std::endl;)
 							parsing_done();
+						}else{ 
+							/* TODO(t0retto): Fix this to compadable for POST! <19-12-20> */
+							parsing_done();
 						}
-					}else{ /* TODO(t0retto): Fix this to compadable for POST! <19-12-20> */
+					}else{ 
 						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
 						this->State = ParserState::PROTOCOL_ERROR;
 					}
@@ -345,7 +347,7 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 	return this->_parsed_bytes;
 }
 
-std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> Parser::HTTPParser::GetParsedMessage() noexcept {
+[[nodiscard]] std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> Parser::HTTPParser::GetParsedMessage() noexcept {
 		return {this->_parse_fail, std::move(this->_HTTPMessage)};
 }
 
