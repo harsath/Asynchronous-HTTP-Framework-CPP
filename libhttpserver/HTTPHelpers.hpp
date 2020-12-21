@@ -20,6 +20,7 @@
 // OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <cctype>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -138,7 +139,23 @@ namespace HTTP::HTTPHelpers{
 		}
 		return raw_data;
 	}
+	
+	inline bool char_compare(const char& c1, const char& c2){
+		if(c1 == c2){
+			return true;
+		}else if(std::toupper(c1) == std::toupper(c2)){
+			return true;
+		}else{
+			return false;
+		}
+	}
 
+	inline bool case_insensitive_string_cmp(const std::string& str1, const std::string& str2){
+		return  (
+				(str1.size() == str2.size()) && 
+				std::equal(str1.begin(), str1.end(), str2.begin(), char_compare)
+			);
+	}
 
 
 } // end namespace HTTP::HTTPHelpers

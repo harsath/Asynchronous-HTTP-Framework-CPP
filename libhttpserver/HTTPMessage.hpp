@@ -41,23 +41,24 @@ namespace HTTP{
 			int RemoveBodyFlush() noexcept;
 			
 			void SetRequestType(const std::string& req_type) noexcept;
-			std::string GetRequestType() const noexcept;
+			std::string& GetRequestType() noexcept;
 
 			void SetTargetResource(const std::string& req_resource) noexcept;
-			std::string GetTargetResource() const noexcept;
+			std::string& GetTargetResource() noexcept;
 
 			void SetHTTPVersion(const std::string& http_version) noexcept;
-			std::string GetHTTPVersion() const noexcept;
+			std::string& GetHTTPVersion() noexcept;
 
 			void SetRawBody(std::string&& raw_body) noexcept;
 			void SetRawBody(const std::string& raw_body) noexcept;
-			std::string GetRawBody() const noexcept;
+			std::string& GetRawBody() noexcept;
 
 			void SetHTTPHeader(std::unique_ptr<HTTPHeaders> headers) noexcept;
 			const std::unique_ptr<HTTPHeaders>& ConstGetHTTPHeader() const noexcept;
+			[[nodiscard]] std::unique_ptr<HTTPHeaders> GetHTTPHeader() noexcept;
 
 			void SetResponseType(const std::string& res_type) noexcept;
-			std::string GetResponseType() const noexcept;
+			std::string& GetResponseType() noexcept;
 
 			HTTP::HTTPConst::HTTP_RESPONSE_CODE GetResponseCode() const noexcept;
 			void SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept;

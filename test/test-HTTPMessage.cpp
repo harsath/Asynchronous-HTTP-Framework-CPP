@@ -4,7 +4,8 @@
 #include <utility>
 
 TEST(HTTPMessage_parse_constructor, HTTPMessage){
-	const char* raw_request = "GET /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/json\r\n\r\nHello, this is text";
+	const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/json\r\n\r\nHello, this is text";
+
 	HTTP::HTTPConst::HTTP_RESPONSE_CODE response_code = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 	std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>(raw_request, response_code);
 	ASSERT_EQ(http_message->ConstGetHTTPHeader()->GetHeaderCount(), 3);
@@ -17,15 +18,14 @@ TEST(HTTPMessage_parse_constructor, HTTPMessage){
 	ASSERT_EQ(http_message->RemoveHeader("Host"), -1);
 	
 	std::string raw_body_orig = "Hello, this is text";
-	bool body_eq = http_message->GetRawBody() == raw_body_orig;
-	EXPECT_TRUE(raw_body_orig == http_message->GetRawBody());
+	ASSERT_EQ(raw_body_orig, http_message->GetRawBody());
 	
 	http_message->RemoveBodyFlush();
 	std::string new_body = "";
 	EXPECT_TRUE(new_body == http_message->GetRawBody());
 	ASSERT_EQ(http_message->RemoveBodyFlush(), -1);
 
-	EXPECT_TRUE(http_message->GetRequestType() == "GET");
+	EXPECT_TRUE(http_message->GetRequestType() == "POST");
 	http_message->SetRequestType("PUT");
 	EXPECT_TRUE(http_message->GetRequestType() == "PUT");
 

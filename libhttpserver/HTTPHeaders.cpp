@@ -91,6 +91,7 @@ std::string HTTP::HTTPHeaders::BuildRawMessage() const noexcept {
 		returner += header_pair.second;
 		returner += "\r\n";
 	}
+	returner += "\r\n";
 	return returner;
 }
 

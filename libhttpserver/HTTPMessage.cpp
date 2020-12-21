@@ -2,14 +2,18 @@
 #include "HTTPConstants.hpp"
 #include "HTTPHeaders.hpp"
 #include "HTTPParserRoutine.hpp"
+#include "HTTPParser.hpp"
 #include <memory>
 #include <string>
 #include <vector>
+
+#define StateMachineParser true
 
 HTTP::HTTPMessage::HTTPMessage(
 		const char* raw_read_buffer,
 		HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status
 		){
+#if !StateMachineParser // we always prefer state-machine parser in here(well, we try to)
 	this->_http_parser_status = http_parser_status;
 	std::pair<std::string, std::string> header_and_body_pair = 
 			HTTP::HTTPParser::request_split_header_body(raw_read_buffer);
@@ -24,6 +28,24 @@ HTTP::HTTPMessage::HTTPMessage(
 	this->_http_version = request_line_splitted.at(2);
 
 	this->_raw_body = std::move(header_and_body_pair.second);
+#else
+	HTTP::HTTP1Parser::HTTPParser parsed_message{raw_read_buffer};
+	parsed_message.ParseBytes();
+	std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> get_parsed_message = 
+			parsed_message.GetParsedMessage();
+	if(get_parsed_message.first){ // checking if our state-machine parser FAILED to parse the HTTP Message(yes, if true)
+		this->_http_parser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST; // If so, we sent a Bad Request	
+	}else{ // if the request HTTP Message is good(parsed by our state-machine), we proceed
+		this->_http_parser_status = std::move(get_parsed_message.second->_http_parser_status);
+		this->_http_status_code = std::move(get_parsed_message.second->_http_status_code);
+		this->_http_version = std::move(get_parsed_message.second->_http_version);
+		this->_raw_body = std::move(get_parsed_message.second->_raw_body);
+		this->_request_target = std::move(get_parsed_message.second->_request_target);
+		this->_request_type = std::move(get_parsed_message.second->_request_type);
+		this->_response_type = std::move(get_parsed_message.second->_response_type);
+		this->_HTTPHeader = get_parsed_message.second->GetHTTPHeader();
+	}
+#endif
 }
 
 HTTP::HTTPMessage::HTTPMessage(){
@@ -37,6 +59,10 @@ void HTTP::HTTPMessage::SetHTTPHeader(std::unique_ptr<HTTPHeaders> headers) noex
 
 const std::unique_ptr<HTTP::HTTPHeaders>& HTTP::HTTPMessage::ConstGetHTTPHeader() const noexcept {
 	return this->_HTTPHeader;
+}
+
+[[nodiscard]] std::unique_ptr<HTTP::HTTPHeaders> HTTP::HTTPMessage::GetHTTPHeader() noexcept {
+	return std::move(this->_HTTPHeader);
 }
 
 void HTTP::HTTPMessage::HTTPHeaderBuild(const std::string& ClientHeader, const std::string& ClientBody){
@@ -70,7 +96,7 @@ void HTTP::HTTPMessage::SetRequestType(const std::string &req_type) noexcept {
 	this->_request_type = req_type;
 }
 
-std::string HTTP::HTTPMessage::GetRequestType() const noexcept {
+std::string& HTTP::HTTPMessage::GetRequestType() noexcept {
 	return this->_request_type;
 } 
 
@@ -78,7 +104,7 @@ void HTTP::HTTPMessage::SetTargetResource(const std::string& req_resource) noexc
 	this->_request_target = req_resource;
 }
 
-std::string HTTP::HTTPMessage::GetTargetResource() const noexcept {
+std::string& HTTP::HTTPMessage::GetTargetResource() noexcept {
 	return this->_request_target;
 }
 
@@ -86,7 +112,7 @@ void HTTP::HTTPMessage::SetHTTPVersion(const std::string& http_version) noexcept
 	this->_http_version = http_version;	
 }
 
-std::string HTTP::HTTPMessage::GetHTTPVersion() const noexcept {
+std::string& HTTP::HTTPMessage::GetHTTPVersion() noexcept {
 	return this->_http_version;
 }
 
@@ -102,7 +128,7 @@ void HTTP::HTTPMessage::SetResponseType(const std::string& res_type) noexcept {
 	this->_response_type = res_type;
 }
 
-std::string HTTP::HTTPMessage::GetResponseType() const noexcept {
+std::string& HTTP::HTTPMessage::GetResponseType() noexcept {
 	return this->_response_type;
 }
 
@@ -154,6 +180,6 @@ void HTTP::HTTPMessage::SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_
 	this->_http_parser_status = res_code;
 }
 
-std::string HTTP::HTTPMessage::GetRawBody() const noexcept {
+std::string& HTTP::HTTPMessage::GetRawBody() noexcept {
 	return this->_raw_body;
 }

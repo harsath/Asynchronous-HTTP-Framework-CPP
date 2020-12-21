@@ -36,7 +36,7 @@ TEST(HTTPHeadersTestBuildRaw, HTTPHeaders){
 	http_header->AddHeader({"Content-Type", "text/html"});
 	ASSERT_EQ(http_header->GetHeaderCount(), 3);
 
-	std::string gen_result = "User-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/html\r\n";
+	std::string gen_result = "User-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/html\r\n\r\n";
 	bool check_result = gen_result == http_header->BuildRawMessage();
 	ASSERT_EQ(check_result, true);
 
