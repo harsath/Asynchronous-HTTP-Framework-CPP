@@ -35,24 +35,30 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
 			raw_read_buffer, tmp_http_message_paser_status
 			);
 
-	this->_HTTPContext->HTTPResponseState = this->_HTTPMessage->GetResponseCode();
+	if(this->_HTTPMessage->ParsedSuccessfully()){
+		this->_HTTPContext->HTTPResponseState = this->_HTTPMessage->GetResponseCode();
 
-	this->_HTTPContext->HTTPLogHolder.resource = this->_HTTPMessage->GetTargetResource();
+		this->_HTTPContext->HTTPLogHolder.resource = this->_HTTPMessage->GetTargetResource();
 
-	std::optional<std::string> user_agent = this->_HTTPMessage->ConstGetHTTPHeader()->GetHeaderValue("User-Agent");
+		std::optional<std::string> user_agent = this->_HTTPMessage->ConstGetHTTPHeader()->GetHeaderValue("User-Agent");
 
-	if(user_agent.has_value())
-		this->_HTTPContext->HTTPLogHolder.useragent = user_agent.value();
-	else
-		this->_HTTPContext->HTTPLogHolder.useragent = "Unknown";
+		if(user_agent.has_value())
+			this->_HTTPContext->HTTPLogHolder.useragent = user_agent.value();
+		else
+			this->_HTTPContext->HTTPLogHolder.useragent = "Unknown";
 
-	this->_HTTPContext->HTTPLogHolder.date = HTTP::HTTPHelpers::get_today_date_full();
+		this->_HTTPContext->HTTPLogHolder.date = HTTP::HTTPHelpers::get_today_date_full();
 
-	this->HTTPResponseHandler();
+		this->HTTPResponseHandler();
+	}else{
+		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST;
+		this->HTTPResponseHandler();
+	}
 }
 
 void HTTP::HTTPHandler::HTTPHandler::HTTPResponseHandler() noexcept {
-	if(this->_HTTPMessage->GetRequestType() == "GET"){
+	// Im using GET's ResponseHandler for sendingout Bad Request because the impl checks HTTPTransactionContext, avoiding repetition
+	if(this->_HTTPMessage->GetRequestType() == "GET" || this->_HTTPContext->HTTPResponseState == HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
 		std::unique_ptr<HTTP::HTTPHandler::HTTPGETResponseHandler> GetRequestHandler = 
 			std::make_unique<HTTP::HTTPHandler::HTTPGETResponseHandler>(
 					std::move(this->_HTTPMessage), std::move(this->_HTTPContext),
