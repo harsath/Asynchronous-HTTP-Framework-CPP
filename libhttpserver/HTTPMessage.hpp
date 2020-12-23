@@ -18,6 +18,7 @@ namespace HTTP{
 			std::string _http_version;
 			std::string _http_status_code;
 			std::string _response_type;
+			bool _parsed_successfully{false};
 			HTTP::HTTPConst::HTTP_RESPONSE_CODE _http_parser_status = 
 				HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 
@@ -65,6 +66,8 @@ namespace HTTP{
 
 			std::string BuildRawResponseMessage() const noexcept;
 
+			bool ParsedSuccessfully() const noexcept;
+			void _SetParserFlag(bool flag_to_set) noexcept;
 	};
 
 } // end namesapce HTTP

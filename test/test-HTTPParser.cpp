@@ -30,7 +30,16 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		parser.ParseBytes();	
 		// 	  first: Is the parsing failed?; second: Pointer to HTTPMessage object
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, true);
+		EXPECT_TRUE(parsed_message.first);
+	}
+
+	{
+		const char* raw_request = "GET /";
+		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
+		parser.ParseBytes();	
+		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
+		EXPECT_FALSE(parsed_message.second->ParsedSuccessfully());
+		EXPECT_TRUE(parsed_message.first);
 	}
 
 	{
@@ -38,7 +47,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, true);
+		EXPECT_TRUE(parsed_message.first);
 	}
 
 	{
@@ -46,7 +55,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, true);
+		EXPECT_TRUE(parsed_message.first);
 	}
 
 	{
@@ -54,7 +63,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, true);
+		EXPECT_TRUE(parsed_message.first);
 	}
 
 	{
@@ -62,7 +71,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, true);
+		EXPECT_TRUE(parsed_message.first);
 	}
 
 	{
@@ -70,7 +79,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, false);
+		EXPECT_FALSE(parsed_message.first);
 	}
 
 	{
@@ -78,7 +87,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, true);
+		EXPECT_TRUE(parsed_message.first);
 	}
 
 	{
@@ -86,7 +95,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, false);
+		EXPECT_FALSE(parsed_message.first);
 		ASSERT_EQ(parsed_message.second->GetRawBody(), "one=value_one&two=value_two");
 	}
 
@@ -95,7 +104,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		HTTP::HTTP1Parser::HTTPParser parser(raw_request);	
 		parser.ParseBytes();	
 		std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> parsed_message = parser.GetParsedMessage();
-		ASSERT_EQ(parsed_message.first, false);
+		EXPECT_FALSE(parsed_message.first);
 		ASSERT_EQ(parsed_message.second->GetRawBody(), "{\"one\":1234, \"two\":\"foo value\"}");
 		ASSERT_EQ(parsed_message.second->GetRequestType(), "POST");
 	}

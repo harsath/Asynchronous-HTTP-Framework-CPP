@@ -1,6 +1,7 @@
 #include <HTTPConstants.hpp>
 #include <HTTPMessage.hpp>
 #include <gtest/gtest.h>
+#include <memory>
 #include <utility>
 
 TEST(HTTPMessage_parse_constructor, HTTPMessage){
@@ -49,6 +50,11 @@ TEST(HTTPMessage_parse_constructor, HTTPMessage){
 		http_message->GetResponseCode() == HTTP::HTTPConst::HTTP_RESPONSE_CODE::FORBIDDEN
 		);
 
+	EXPECT_TRUE(
+		http_message->ParsedSuccessfully()
+		   );
+
+
 	std::string raw_response_build = "HTTP/2.0 403 Forbidden\r\nUser-Agent: curl\r\nContent-Type: text/json\r\nX-Powered-By: libhttpserver\r\n\r\n";
 	EXPECT_TRUE(raw_response_build == http_message->BuildRawResponseMessage());
 }
@@ -66,4 +72,24 @@ TEST(HTTPMessage_build_response_message, HTTPMessage){
 	http_message->SetRawBody("<html><p>Hello, horror world!</p></html>");
 
 	EXPECT_TRUE(http_message->BuildRawResponseMessage() == target_response);
+}
+
+TEST(HTTPMessage_state_machine_parser, HTTPMessage){
+	{
+		const char* request = "GET /index HTTP/\r\nHost: foo.com";
+		HTTP::HTTPConst::HTTP_RESPONSE_CODE response_code = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+		std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>(request, response_code);
+		EXPECT_FALSE(
+			http_message->ParsedSuccessfully()
+			    );
+	}
+
+	{
+		const char* request = "GET /index HTTP/1.1\r\nHost: foo.com\r\n\r\n";
+		HTTP::HTTPConst::HTTP_RESPONSE_CODE response_code = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+		std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>(request, response_code);
+		EXPECT_TRUE(
+			http_message->ParsedSuccessfully()
+			    );
+	}
 }

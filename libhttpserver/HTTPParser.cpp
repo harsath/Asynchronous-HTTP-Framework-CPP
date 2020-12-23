@@ -82,6 +82,7 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 
 	auto parsing_done = [this](void) -> void {
 		this->_finished_parsing = true;
+		this->_HTTPMessage->_SetParserFlag(!this->_parse_fail);
 	};
 
 
@@ -338,10 +339,14 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 			case ParserState::CONTENT_BEGIN:
 				{
 					// I might want to check for the Content-Length, keeping these seperate for future things like Chunk Sizes
-					this->_HTTPMessage->GetRawBody().push_back(*_parser_input);
-					this->State = ParserState::CONTENT;
-					increment_byte();
-					Debug(std::cout << state_as_string(ParserState::CONTENT_BEGIN) << std::endl;)
+					if(*_parser_input == '\0'){
+						this->State = ParserState::CONTENT_END;	
+					}else{
+						this->_HTTPMessage->GetRawBody().push_back(*_parser_input);
+						this->State = ParserState::CONTENT;
+						increment_byte();
+						Debug(std::cout << state_as_string(ParserState::CONTENT_BEGIN) << std::endl;)
+					}
 					break;
 				}
 			case ParserState::CONTENT:

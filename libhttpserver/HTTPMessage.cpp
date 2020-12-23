@@ -43,9 +43,18 @@ HTTP::HTTPMessage::HTTPMessage(
 		this->_request_target = std::move(get_parsed_message.second->_request_target);
 		this->_request_type = std::move(get_parsed_message.second->_request_type);
 		this->_response_type = std::move(get_parsed_message.second->_response_type);
+		this->_parsed_successfully = get_parsed_message.second->_parsed_successfully;
 		this->_HTTPHeader = get_parsed_message.second->GetHTTPHeader();
 	}
 #endif
+}
+
+bool HTTP::HTTPMessage::ParsedSuccessfully() const noexcept {
+	return this->_parsed_successfully;
+}
+
+void HTTP::HTTPMessage::_SetParserFlag(bool flag_to_set) noexcept {
+	this->_parsed_successfully = flag_to_set;
 }
 
 HTTP::HTTPMessage::HTTPMessage(){
