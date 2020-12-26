@@ -389,6 +389,11 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 									"POST")){ 
 							increment_byte();
 							this->State = ParserState::CONTENT_BEGIN;
+						}else if(HTTPHelpers::case_insensitive_string_cmp(
+									this->_HTTPMessage->GetRequestType(),
+									"HEAD")){
+							Debug(std::cout << "HEAD Request Parsing done" << std::endl;)
+							parsing_done();
 						}
 					}else{ 
 						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
