@@ -19,7 +19,6 @@ std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> 
 
 		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
 		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseType("Created");
 		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
 		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));

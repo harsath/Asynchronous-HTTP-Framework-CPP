@@ -97,7 +97,6 @@ HTTP::HTTPHandler::HTTPHEADResponseHandler::HTTPHEADResponseHandler(
 	if(HTTPContext->HTTPResponseState == HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
 		std::string response_body = "<html><h2> 400 Bad Request, please check your request </h2></html>";
 		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseType("Bad Request");
 		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
 		HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(response_body.size()));
@@ -109,7 +108,6 @@ HTTP::HTTPHandler::HTTPHEADResponseHandler::HTTPHEADResponseHandler(
 					filename_and_filepath_map.at(HTTPClientMessage->GetTargetResource())
 					);
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseType("OK");
 			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
@@ -120,7 +118,6 @@ HTTP::HTTPHandler::HTTPHEADResponseHandler::HTTPHEADResponseHandler(
 					filename_and_filepath_map.at("/index.html")
 					);
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseType("OK");
 			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
@@ -129,7 +126,6 @@ HTTP::HTTPHandler::HTTPHEADResponseHandler::HTTPHEADResponseHandler(
 		}else{
 			std::string raw_body = "<html><h2> Oops, 404 Not Found :( </h2></html>";
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseType("Not Found");
 			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND);
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
@@ -155,7 +151,6 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 	if(HTTPContext->HTTPResponseState == HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
 		std::string response_body = "<html><h2> 400 Bad Request, please check your request </h2></html>";
 		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseType("Bad Request");
 		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
 		HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(response_body.size()));
@@ -168,7 +163,6 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 					filename_and_filepath_map.at(HTTPClientMessage->GetTargetResource())
 					);
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseType("OK");
 			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
@@ -180,7 +174,6 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 					filename_and_filepath_map.at("/index.html")
 					);
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseType("OK");
 			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
@@ -190,7 +183,6 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 		}else{
 			std::string raw_body = "<html><h2> Oops, 404 Not Found :( </h2></html>";
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseType("Not Found");
 			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND);
 			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
@@ -277,7 +269,6 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 		}else{
 			std::string raw_body = "This endpoint only supports " + post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).first;
 			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseType("Unsupported Media Type");
 			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNSUPPORTED_MEDIA_TYPE);
 			HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
@@ -287,7 +278,6 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 	}else{
 		std::string raw_body = "405 Method Not Allowed. No such endpoints";
 		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseType("Method Not Allowed");
 		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::METHOD_NOT_ALLOWED);
 		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
