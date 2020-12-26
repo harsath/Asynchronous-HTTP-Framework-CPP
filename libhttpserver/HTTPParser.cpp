@@ -160,51 +160,112 @@ std::size_t Parser::HTTPParser::ParseBytes(){
 				}
 			case ParserState::REQUEST_PROTOCOL_BEGIN:
 				{
-					if(*_parser_input != 'H'){
+					if(*_parser_input == 'H'){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_T1;
+						Debug(std::cout << "H" << std::endl;)
+						Debug(std::cout << *_parser_input << state_as_string(ParserState::REQUEST_PROTOCOL_BEGIN) << std::endl;)
+						increment_byte();
+					}else{
 						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_BEGIN) << " != H state" << std::endl;)
 						this->State = ParserState::PROTOCOL_ERROR;
-					}else if(
-						*_parser_input == 'H' && *(_parser_input+1) == 'T' && *(_parser_input+2) == 'T' && 
-						*(_parser_input+3) == 'P'
-						){ // I know Im chearing here with "state-machine parser" ;)
-						this->_HTTPMessage->GetHTTPVersion().append("HTTP");
-						this->State = ParserState::REQUEST_PROTOCOL_SLASH;
-						Debug(std::cout << "HTTP" << std::endl;)
-						Debug(std::cout << *_parser_input << state_as_string(ParserState::REQUEST_PROTOCOL_BEGIN) << std::endl;)
-						increment_byte(4); // incrementing 4 bytes because we parsed "HTTP"
+					}
+					break;
+				}
+			case ParserState::REQUEST_PROTOCOL_T1:
+				{
+					if(*_parser_input == 'T'){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_T2;
+						Debug(std::cout << "T" << std::endl;)
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_T1);)
+						increment_byte();
 					}else{
-						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR);)
 						this->State = ParserState::PROTOCOL_ERROR;
+						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
+					}
+					break;
+				}
+			case ParserState::REQUEST_PROTOCOL_T2:
+				{
+					if(*_parser_input == 'T'){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_P;
+						Debug(std::cout << "T" << std::endl;)
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_T2) << std::endl;)
+						increment_byte();
+					}else{
+						this->State = ParserState::PROTOCOL_ERROR;
+						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
+					}
+					break;
+				}
+			case ParserState::REQUEST_PROTOCOL_P:
+				{
+					if(*_parser_input == 'P'){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_SLASH;
+						Debug(std::cout << "P" << std::endl;)
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_P) << std::endl;)
+						increment_byte();
+					}else{
+						this->State = ParserState::PROTOCOL_ERROR;
+						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
 					}
 					break;
 				}
 			case ParserState::REQUEST_PROTOCOL_SLASH:
 				{
-					if(*_parser_input != '/'){
-						Debug(std::cout << *_parser_input << std::endl;)
-						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR);)
-						this->State = ParserState::PROTOCOL_ERROR;
-					}else{
+					if(*_parser_input == '/'){
 						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
 						Debug(std::cout << *_parser_input << std::endl;)
 						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_SLASH);)
 						increment_byte();
-						this->State = ParserState::REQUEST_PROTOCOL_VERSION;
+						this->State = ParserState::REQUEST_PROTOCOL_VERSION_MAJOR;
+					}else{
+						Debug(std::cout << *_parser_input << std::endl;)
+						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR);)
+						this->State = ParserState::PROTOCOL_ERROR;
 					}
 					break;
 				}
-			case ParserState::REQUEST_PROTOCOL_VERSION:
+			case ParserState::REQUEST_PROTOCOL_VERSION_MAJOR:
 				{
-					if(*_parser_input == '1' && *(_parser_input+1) == '.' && *(_parser_input+2) == '1' && 
-							*(_parser_input+3) == static_cast<char>(LexConst::CR)){
-						this->_HTTPMessage->GetHTTPVersion().append("1.1");
-						this->State = ParserState::REQUEST_LINE_LF;
-						Debug(std::cout << "1.1" << std::endl;)
-						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_VERSION) << std::endl;)
-						increment_byte(4);
+					if(std::isdigit(*_parser_input)){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_VERSION_MAJOR;
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_VERSION_MAJOR) << std::endl;)
+						increment_byte();
+					}else if(*_parser_input == '.'){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_VERSION_MINOR;
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_VERSION_MAJOR) << std::endl;)
+						increment_byte();
 					}else{
 						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
 						this->State = ParserState::PROTOCOL_ERROR;
+					}
+					break;
+				}
+			case ParserState::REQUEST_PROTOCOL_VERSION_MINOR:
+				{
+					if(*_parser_input == '.'){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_VERSION_MINOR;
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_VERSION_MINOR) << std::endl;)
+						increment_byte();
+					}else if(std::isdigit(*_parser_input)){
+						this->_HTTPMessage->GetHTTPVersion().push_back(*_parser_input);
+						this->State = ParserState::REQUEST_PROTOCOL_VERSION_MINOR;
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_VERSION_MINOR) << std::endl;)
+						increment_byte();	
+					}else if(*_parser_input == static_cast<char>(LexConst::CR)){
+						this->State = ParserState::REQUEST_LINE_LF;
+						Debug(std::cout << state_as_string(ParserState::REQUEST_PROTOCOL_VERSION_MINOR) << std::endl;)
+						increment_byte();
+					}else{
+						this->State = ParserState::PROTOCOL_ERROR;
+						Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
 					}
 					break;
 				}
@@ -398,12 +459,20 @@ std::string Parser::state_as_string(const ParserState &state){
 			return "request-resource";
 		case ParserState::REQUEST_PROTOCOL_BEGIN:
 			return "request-protocol-begin";
+		case ParserState::REQUEST_PROTOCOL_T1:
+			return "request-protocol-T1";
+		case ParserState::REQUEST_PROTOCOL_T2:
+			return "request-protocol-T2";
+		case ParserState::REQUEST_PROTOCOL_P:
+			return "request-protocol-P";
 		case ParserState::REQUEST_PROTOCOL_SLASH:
 			return "request-protocol-slash";
+		case ParserState::REQUEST_PROTOCOL_VERSION_MAJOR:
+			return "request-protocol-version-major";
+		case ParserState::REQUEST_PROTOCOL_VERSION_MINOR:
+			return "request-protocol-version-minor";
 		case ParserState::REQUEST_LINE_LF:
 			return "request-protocol-slash";
-		case ParserState::REQUEST_PROTOCOL_VERSION:
-			return "request-protocol-version";
 		case ParserState::HEADER_NAME_BEGIN:
 			return "header-name-begin";
 		case ParserState::HEADER_NAME:
