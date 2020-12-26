@@ -1,5 +1,5 @@
 // libhttpserver ssl http server implementation
-// copyright © 2020 harsath
+// copyright © 2020 Harsath
 //
 // permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "software"),
@@ -103,6 +103,15 @@ namespace HTTP::HTTPHandler{
 					const std::unordered_map<std::string,
 						std::pair<std::string, std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>)>>
 					>& _post_endpoint_and_callbacks
+					);
+	};
+
+	class HTTPHEADResponseHandler{
+		public:
+			explicit HTTPHEADResponseHandler(
+					std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage,
+					std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
+					const std::unordered_map<std::string, std::string>& _filename_and_filepath_map
 					);
 	};
 

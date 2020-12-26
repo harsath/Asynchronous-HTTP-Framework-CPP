@@ -28,7 +28,7 @@ The complete example is found in the `main.cpp` file in the project root
 
 * Request and Responce from user-agent/client and origin-server:
 	```
-	$ curl -v -H "application/json" -d '{"value_one":123,"value_two":"foo_value"}' http://localhost:8766/poster
+	$ curl -v -H "Content-Type: application/json" -d '{"value_one":123,"value_two":"foo_value"}' http://localhost:8766/poster
 	*   Trying 127.0.0.1:8766...
 	* Connected to localhost (127.0.0.1) port 8766 (#0)
 	> POST /poster HTTP/1.1

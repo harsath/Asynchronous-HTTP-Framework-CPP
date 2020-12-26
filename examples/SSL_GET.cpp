@@ -29,37 +29,7 @@
 #include "HTTPMessage.hpp"
 #include <nlohmann/json.hpp>
 
-std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage){
-	try{
-		using json = nlohmann::json;
-		auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
-		int int_value = parsed_json["value_one"];
-		std::string string_value = parsed_json["value_two"];
-		std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
-
-		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseType("Created");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-		HTTPResponseMessage->SetRawBody(std::move(returner));
-
-		return HTTPResponseMessage;
-	}catch(const std::exception& e){
-		std::cout << "Invalid request from user-agent\n";
-                std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-                std::string returner = "Invalid request body, rejected by origin-server";
-                HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-                HTTPResponseMessage->SetResponseType("Bad Request");
-                HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
-                HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-                HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-                HTTPResponseMessage->SetRawBody(std::move(returner));
-                return HTTPResponseMessage;
-	}
-}
-
+// Since there is no need for a call-back function in a simple HTTP-GET server, I removed the call-back function part. Checkout other files to know more
 int main(int argc, const char* argv[]){
 
 	std::vector<HTTP::HTTPHandler::HTTPPostEndpoint> post_endpoint = { };

@@ -39,7 +39,6 @@ std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> 
 
 		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
 		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseType("Created");
 		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
 		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
@@ -51,7 +50,6 @@ std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> 
                 std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
                 std::string returner = "Invalid request body, rejected by origin-server";
                 HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-                HTTPResponseMessage->SetResponseType("Bad Request");
                 HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
                 HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
                 HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
