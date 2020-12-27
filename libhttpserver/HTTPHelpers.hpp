@@ -102,12 +102,12 @@ namespace HTTP::HTTPHelpers{
 					log_struct.resource, log_struct.useragent, log_struct.log_message));
 	}
 
-	inline void read_date(int net_fd, char* read_buffer, std::size_t read_buffer_size, int recv_flag){
+	inline void read_data(int net_fd, char* read_buffer, std::size_t read_buffer_size, int recv_flag){
 		int recv_ret = recv(net_fd, read_buffer, read_buffer_size, recv_flag);
 		err_check(recv_ret, "linux recv()");
 	}
 
-	inline void write_date(int new_fd, const char* buffer, std::size_t buffer_size, int send_flag){
+	inline void write_data(int new_fd, const char* buffer, std::size_t buffer_size, int send_flag){
 		int send_ret = send(new_fd, buffer, buffer_size, send_flag);
 		err_check(send_ret, "linux send()");
 	}

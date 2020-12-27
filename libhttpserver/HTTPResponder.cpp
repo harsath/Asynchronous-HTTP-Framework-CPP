@@ -10,7 +10,7 @@ int HTTP::HTTPPlaintextResponder::write_to_socket(
 		std::string raw_response_) noexcept{
 	
 	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
-	HTTP::HTTPHelpers::write_date(
+	HTTP::HTTPHelpers::write_data(
 			HTTPContext->HTTPClientFD, 
 			raw_response_.c_str(), 
 			raw_response_.size(), 
