@@ -41,6 +41,7 @@ set(
 	./HTTPSSLHelpers.hpp
 	./HTTPParser.cpp
 	./HTTPParser.hpp
+	./TCPEndpoint.hpp
 	)
 add_library(
 	${LIB_BIN_NAME} 

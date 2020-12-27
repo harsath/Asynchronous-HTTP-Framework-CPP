@@ -41,6 +41,7 @@
 #include "HTTPSSLHelpers.hpp"
 #include "HTTPHandler.hpp"
 #include "HTTPParserRoutine.hpp"
+#include "TCPEndpoint.hpp"
 #include "HTTPLogHelpers.hpp"
 #include <vector>
 #include <unordered_map>
@@ -75,12 +76,8 @@ namespace HTTP::HTTPAcceptor{
 
 	class HTTPAcceptorPlainText final : public HTTPAcceptor{
 		private:
-			std::string _server_addr;
-			std::uint16_t _server_port;
-			int _server_backlog;
-			struct sockaddr_in _server_sockaddr, _client_sockaddr;
-			int _server_sock_fd;
 			HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
+			Transport::TCPEndpoint _TCPEndpoint;
 			constexpr static std::size_t _acceptor_read_buff_size = 2048;
 			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
 			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
@@ -104,12 +101,8 @@ namespace HTTP::HTTPAcceptor{
 
 	class HTTPAcceptorSSL final : public HTTPAcceptor{
 		private:
-			std::string _server_addr;
-			std::uint16_t _server_port;
-			int _server_backlog;
-			struct sockaddr_in _server_sockaddr, _client_sockaddr;
-			int _server_sock_fd;
 			HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
+			Transport::TCPEndpoint _TCPEndpoint;
 			constexpr static std::size_t _acceptor_read_buff_size = 2048;
 			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
 			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
