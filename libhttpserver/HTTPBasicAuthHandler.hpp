@@ -16,6 +16,7 @@ namespace HTTP::BasicAuth{
 		public:
 			BasicAuthHandler(const std::string& cred_file);
 			bool check_credentials(const std::string& endpoint, const std::string& encoded_auth_param);
+			~BasicAuthHandler() = default;
 		protected:
 			std::optional<std::pair<std::string, std::string>> 
 				m_basic_auth_cred_parser(const std::string& decoded_auth_values);

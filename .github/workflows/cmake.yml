@@ -36,15 +36,5 @@ jobs:
                         - name: Configuring and Build
                           shell: bash
                           run: |
-                                TEST_BINARY_NAME="./test/HTTPTest"
-                                if ! [[ -d "build" ]]; then
-                                        mkdir build && cd build
-                                        CC=gcc-9 && CXX=g++-9 cmake -D CMAKE_CXX_FLAGS="-Wall -O3 -g" .. && make
-                                        if [[ -f ${TEST_BINARY_NAME} ]]; then
-                                                ./$TEST_BINARY_NAME
-                                        fi
-                                else
-                                        echo -e "[ERROR] build dir already exists; remove that\n"
-                                        exit 2
-                                fi
-
+                                chmod +x ./CI-scripts/build_run_tests_CI.sh
+                                bash ./CI-scripts/build_run_tests_CI.sh

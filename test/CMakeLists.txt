@@ -43,6 +43,7 @@ set(
 	./test-HTTPMessage.cpp
 	./test-HTTPParser.cpp
 	./test-VendorBase64.cpp
+	./test-HTTPBasicAuthHandler.cpp
 	)
 
 add_executable(
@@ -64,7 +65,3 @@ add_test(
 	NAME ${GTEST_EXEC_NAME}
 	COMMAND ${GTEST_EXEC_NAME}
 	)
-
-# target_link_options(
-# 	${GTEST_EXEC_NAME}
-	# )

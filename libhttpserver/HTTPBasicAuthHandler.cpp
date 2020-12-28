@@ -1,17 +1,38 @@
 #include "HTTPBasicAuthHandler.hpp"
+#include "nlohmann/json.hpp"
 #include "base64.hpp"
 #include <algorithm>
+#include <iostream>
+#include <fstream>
 #include <iterator>
 #include <optional>
+#include <sstream>
+#include <string>
 
 HTTP::BasicAuth::BasicAuthHandler::BasicAuthHandler(const std::string& cred_file)
 	: _auth_cred_filename{cred_file} {
 	this->m_populate_map();
 	}
 
-// TODO: Look for the answer from the JSON github
 void HTTP::BasicAuth::BasicAuthHandler::m_populate_map(){
-	
+	std::ifstream cred_stream{this->_auth_cred_filename};
+	std::string file_data;
+	if(cred_stream.is_open()){
+		std::string line;
+		while(std::getline(cred_stream, line)){
+			file_data.append(line);
+		}
+	}else{
+	 	perror("Unable to open API auth file for REST services\n");
+		::exit(1);
+	}
+	cred_stream.close();
+	auto json_reader = nlohmann::json::parse(file_data);
+	for(const auto& endpoints : json_reader.items()){
+		for(const auto& credentials : endpoints.value().items()){
+			this->_endpoint_cred_map[endpoints.key()].emplace_back(credentials.key(), credentials.value());
+		}
+	}
 }
 
 bool HTTP::BasicAuth::BasicAuthHandler::check_credentials(
@@ -126,6 +147,6 @@ HTTP::BasicAuth::BasicAuthHandler::m_basic_auth_cred_parser(const std::string& d
 }
 
 bool HTTP::BasicAuth::is_control_character(const unsigned char value){
-	return !((value > static_cast<unsigned char>(0x1F)) && (value <= static_cast<unsigned char>(0x00)) && 
-			value != static_cast<unsigned char>(0x7F));
+	return (((value > static_cast<unsigned char>(0x1F)) && (value <= static_cast<unsigned char>(0x00)) && 
+			value != static_cast<unsigned char>(0x7F)));
 }

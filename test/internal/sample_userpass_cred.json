@@ -1,0 +1,10 @@
+{
+	"/post_one": {
+		"user_one": "passwordHash1!@",
+		"user_two": "passwordHash2#$"
+	},
+	"/post_two": {
+		"user_foo": "passwordHash3$%",
+		"user_bar": "passwordHash4%^*"
+	}
+}
