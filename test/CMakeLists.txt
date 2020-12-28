@@ -42,6 +42,7 @@ set(
 	./test-HTTPParserRoutine.cpp
 	./test-HTTPMessage.cpp
 	./test-HTTPParser.cpp
+	./test-VendorBase64.cpp
 	)
 
 add_executable(
@@ -56,6 +57,7 @@ target_link_libraries(
 	gtest_main
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
+	bcrypt
 	)
 
 add_test(

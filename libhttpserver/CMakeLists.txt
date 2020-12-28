@@ -42,6 +42,8 @@ set(
 	./HTTPParser.cpp
 	./HTTPParser.hpp
 	./TCPEndpoint.hpp
+	./HTTPBasicAuthHandler.hpp
+	./HTTPBasicAuthHandler.cpp
 	)
 add_library(
 	${LIB_BIN_NAME} 
@@ -69,6 +71,8 @@ target_link_libraries(
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
 	Threads::Threads
+	bcrypt
+	3rd_party
 	)
 
 # target_compile_options(
