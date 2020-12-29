@@ -97,6 +97,8 @@ namespace HTTP::LOG{
 					return std::make_unique<ErrorContext>(file_name);
 				case Log::Access:
 					return std::make_unique<AccessContext>(file_name);
+				default:
+					throw "Invalid Log context";
 			}
 		}
 	};

@@ -44,6 +44,7 @@ add_subdirectory(./vendor)
 add_subdirectory(./vendor/json)
 add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
+add_subdirectory(./vendor/libbcrypt)
 add_subdirectory(./test)
 
 add_executable(
@@ -53,6 +54,7 @@ add_executable(
 
 target_link_libraries(
 	${PROJECT_NAME}
+	bcrypt
 	libhttp
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only

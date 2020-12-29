@@ -63,6 +63,7 @@ namespace HTTP{
 
 			HTTP::HTTPConst::HTTP_RESPONSE_CODE GetResponseCode() const noexcept;
 			void SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept;
+			std::optional<std::string> GetHeaderValue(const std::string& name) noexcept;
 
 			std::string BuildRawResponseMessage() const noexcept;
 

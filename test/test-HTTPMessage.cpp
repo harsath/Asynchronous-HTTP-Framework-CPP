@@ -14,7 +14,7 @@ TEST(HTTPMessage_parse_constructor, HTTPMessage){
 	http_message->AddHeader("X-Powered-By", "libhttpserver");
 	ASSERT_EQ(http_message->ConstGetHTTPHeader()->GetHeaderCount(), 4);
 
-	int remove_ret = http_message->RemoveHeader("Host");
+	http_message->RemoveHeader("Host");
 	ASSERT_EQ(http_message->ConstGetHTTPHeader()->GetHeaderCount(), 3);
 	ASSERT_EQ(http_message->RemoveHeader("Host"), -1);
 	

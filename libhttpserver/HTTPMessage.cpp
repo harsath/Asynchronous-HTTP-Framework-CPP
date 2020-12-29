@@ -192,3 +192,7 @@ void HTTP::HTTPMessage::SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_
 std::string& HTTP::HTTPMessage::GetRawBody() noexcept {
 	return this->_raw_body;
 }
+
+std::optional<std::string> HTTP::HTTPMessage::GetHeaderValue(const std::string& name) noexcept {
+	return this->_HTTPHeader->GetHeaderValue(name);
+}

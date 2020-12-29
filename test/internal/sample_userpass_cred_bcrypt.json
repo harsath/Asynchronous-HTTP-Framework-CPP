@@ -1,0 +1,10 @@
+{
+	"/post_one": {
+		"user_one": "$2b$12$IZAa6A4r6M9tKoHc8OuFl.x4CZAvtKYHm2L3tCDCflpO2fqLtnviy",
+		"user_two": "$2b$12$GsKrXbqrcS0P9G3KksVgV.mQvcZR0lXxqp7Q0Y5HilxAQmDbPLTtu"
+	},
+	"/post_two": {
+		"user_foo": "$2b$12$vSa03s683s81pbnAGEGbv.n2gaFm3SRKoztK5CZa2VF809gilgio2",
+		"user_bar": "$2b$12$y.CIqa6FsRp6XzHtpdu7juzWDDJUwnF9U6Xm8DkSLGnwT0K9lvs6."
+	}
+}

@@ -42,6 +42,8 @@ set(
 	./HTTPParser.cpp
 	./HTTPParser.hpp
 	./TCPEndpoint.hpp
+	./HTTPBasicAuthHandler.hpp
+	./HTTPBasicAuthHandler.cpp
 	)
 add_library(
 	${LIB_BIN_NAME} 
@@ -52,6 +54,7 @@ set_target_properties(
 	PROPERTIES LINKER_LANGUAGE CXX
 	)
 
+include_directories(../vendor/libbcrypt/include)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Threads REQUIRED)
@@ -69,8 +72,6 @@ target_link_libraries(
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
 	Threads::Threads
+	bcrypt
+	3rd_party
 	)
-
-# target_compile_options(
-# 	${LIB_BIN_NAME} 
-# 	PRIVATE -g)

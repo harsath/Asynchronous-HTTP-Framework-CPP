@@ -20,3 +20,9 @@ This directory contains 3rd-party software.
 		Project URL: https://github.com/fmtlib/fmt
 		Copyright: (c) 2012 - present, Victor Zverovich
 		Release data: 2020-11-02
+	[4] libbcrypt:
+		A c++ wrapper around bcrypt password hashing
+		Commit Hash: f80c71730374cb29c4fa606bbc04d1cc96654ba3
+		License type: MIT
+		Project URL: https://github.com/trusch/libbcrypt
+		Copyright: (c) Tino Rusch

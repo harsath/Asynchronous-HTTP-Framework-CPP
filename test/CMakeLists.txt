@@ -42,8 +42,11 @@ set(
 	./test-HTTPParserRoutine.cpp
 	./test-HTTPMessage.cpp
 	./test-HTTPParser.cpp
+	./test-VendorBase64.cpp
+	./test-HTTPBasicAuthHandler.cpp
 	)
 
+include_directories(../vendor/libbcrypt/include)
 add_executable(
 	${GTEST_EXEC_NAME}
 	${GTEST_SOURCE_FILES}
@@ -56,13 +59,10 @@ target_link_libraries(
 	gtest_main
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
+	bcrypt
 	)
 
 add_test(
 	NAME ${GTEST_EXEC_NAME}
 	COMMAND ${GTEST_EXEC_NAME}
 	)
-
-# target_link_options(
-# 	${GTEST_EXEC_NAME}
-	# )
