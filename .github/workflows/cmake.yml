@@ -33,6 +33,9 @@ jobs:
                                 gcc --version
                                 echo -e "\nCMake VERSION:\n"
                                 cmake --version
+                                sudo apt install python3
+                                sudo apt install python3-pip
+                                pip install bcrypt
                         - name: Configuring and Build
                           shell: bash
                           run: |

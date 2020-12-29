@@ -1,10 +1,11 @@
 #include "HTTPBasicAuthHandler.hpp"
+#include "bcrypt/BCrypt.hpp"
 #include <gtest/gtest.h>
 #include <memory>
 
 TEST(HTTPBasicAuthHandler_parser_test, HTTPBasicAuthHandler){
 	std::unique_ptr<HTTP::BasicAuth::BasicAuthHandler> auth_handler = 
-		std::make_unique<HTTP::BasicAuth::BasicAuthHandler>("./internal/sample_userpass_cred.json");
+		std::make_unique<HTTP::BasicAuth::BasicAuthHandler>("./internal/sample_userpass_cred_bcrypt.json");
 	std::string user_one_post_one = "dXNlcl9vbmU6cGFzc3dvcmRIYXNoMSFA";
 	std::string user_one_post_one_endpoint = "/post_one";
 	ASSERT_TRUE(auth_handler->check_credentials(user_one_post_one_endpoint, user_one_post_one));

@@ -48,7 +48,7 @@ bool HTTP::BasicAuth::BasicAuthHandler::check_credentials(
 				this->_endpoint_cred_map.at(endpoint);
 			auto result = std::find_if(std::begin(user_creds), std::end(user_creds), 
 					[&parsed_results](const std::pair<std::string, std::string>& values) -> bool {
-						return ((values.first == parsed_results.value().first) && (values.second == parsed_results.value().second));
+						return ((values.first == parsed_results.value().first) && BCrypt::validatePassword(parsed_results.value().second, values.second));
 					});
 			if(result != std::end(user_creds)){
 				return true;
