@@ -54,11 +54,11 @@ add_executable(
 
 target_link_libraries(
 	${PROJECT_NAME}
+	bcrypt
 	libhttp
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
 	3rd_party
-	bcrypt
 	)
 
 set_target_properties(

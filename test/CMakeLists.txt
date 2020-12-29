@@ -46,6 +46,7 @@ set(
 	./test-HTTPBasicAuthHandler.cpp
 	)
 
+include_directories(../vendor/libbcrypt/include)
 add_executable(
 	${GTEST_EXEC_NAME}
 	${GTEST_SOURCE_FILES}
