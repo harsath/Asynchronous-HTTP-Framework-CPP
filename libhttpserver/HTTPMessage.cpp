@@ -173,6 +173,9 @@ std::string HTTP::HTTPMessage::BuildRawResponseMessage() const noexcept {
 		case HTTP_RESPONSE_CODE::MOVED_PERMANENTLY:
 			returner += "301 Moved Permanently\r\n";
 			break;
+		case HTTP_RESPONSE_CODE::UNAUTHORIZED:
+			returner += "401 Unauthorized\r\n";
+			break;
 	}
 	for(const std::pair<std::string, std::string>& header_pair : this->_HTTPHeader->GetHeaderPairVector()){
 		returner += header_pair.first + ": " + header_pair.second + "\r\n";

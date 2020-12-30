@@ -14,6 +14,7 @@ namespace HTTP::BasicAuth{
 			std::unordered_map<std::string, 
 				std::vector<std::pair<std::string, std::string>>> _endpoint_cred_map;
 		public:
+			BasicAuthHandler(){}
 			BasicAuthHandler(const std::string& cred_file);
 			bool check_credentials(const std::string& endpoint, const std::string& encoded_auth_param);
 			~BasicAuthHandler() = default;
@@ -24,5 +25,6 @@ namespace HTTP::BasicAuth{
 	};
 	// Helper methods
 	bool is_control_character(const unsigned char value);
+	std::optional<std::string> split_base64_from_scheme(const std::string& header_value);
 
 } // end namespace HTTP::BasicAuth

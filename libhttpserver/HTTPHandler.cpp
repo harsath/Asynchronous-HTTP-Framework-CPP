@@ -1,4 +1,5 @@
 #include "HTTPHandler.hpp"
+#include "HTTPBasicAuthHandler.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPHeaders.hpp"
 #include "HTTPHelpers.hpp"
@@ -228,7 +229,8 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 				std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage_,
 				std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext_,
 				const std::unordered_map<std::string,
-					std::pair<std::string, std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>)>>
+					std::pair<std::string, 
+					std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>, HTTP::BasicAuth::BasicAuthHandler*)>>
 					>& post_endpoint_and_callbacks){
 	std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);
 	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
@@ -241,7 +243,10 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 		if(HTTPClientMessage->ConstGetHTTPHeader()->GetHeaderValue("Content-Type") == 
 				post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).first){
 
-			HTTPResponseMessage = post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).second(std::move(HTTPClientMessage));
+			if(HTTPClientMessage->ConstGetHTTPHeader()->GetHeaderValue("Authorization").has_value())
+			HTTPResponseMessage = post_endpoint_and_callbacks.at(
+					HTTPClientMessage->GetTargetResource()
+					).second(std::move(HTTPClientMessage), HTTPContext->BasicAuthHandler);
 			
 			switch(HTTPResponseMessage->GetResponseCode()){
 				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK:
@@ -270,6 +275,9 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 					break;
 				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::MOVED_PERMANENTLY:
 					HTTPContext->HTTPLogHolder.log_message = "Serving user with 301 Moved Permanently";
+					break;
+				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNAUTHORIZED:
+					HTTPContext->HTTPLogHolder.log_message = "Serving user with 401 Unauthorized";
 					break;
 			}
 		}else{

@@ -36,6 +36,7 @@
 #include <unistd.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include "HTTPBasicAuthHandler.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
 #include "HTTPSSLHelpers.hpp"
@@ -67,7 +68,8 @@ namespace HTTP::HTTPAcceptor{
 					const std::string& path_to_root,
 					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
 					const std::string& ssl_cert = "",
-					const std::string& ssl_private_key = ""
+					const std::string& ssl_private_key = "",
+					const std::string& auth_credentials_file = ""
 					) noexcept = 0;
 
 			virtual void HTTPStreamAccept() noexcept = 0;
@@ -83,6 +85,7 @@ namespace HTTP::HTTPAcceptor{
 			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
 			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
 			HTTP::LOG::LoggerHelper* _HTTPLogHandler;
+			HTTP::BasicAuth::BasicAuthHandler* _http_basic_auth_handler{nullptr};
 		public:
 			explicit HTTPAcceptorPlainText(){}
 			void HTTPStreamSock(
@@ -93,7 +96,8 @@ namespace HTTP::HTTPAcceptor{
 					const std::string& path_to_root,
 					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
 					const std::string& ssl_cert = "",
-					const std::string& ssl_private_key = ""
+					const std::string& ssl_private_key = "",
+					const std::string& auth_credentials_file = ""
 					) noexcept override;
 			void HTTPStreamAccept() noexcept override;
 			~HTTPAcceptorPlainText();
@@ -109,6 +113,7 @@ namespace HTTP::HTTPAcceptor{
 			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
 			std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> _SSLContext;
 			HTTP::LOG::LoggerHelper* _HTTPLogHandler;
+			HTTP::BasicAuth::BasicAuthHandler* _http_basic_auth_handler;
 		public:
 			explicit HTTPAcceptorSSL(){}
 			void HTTPStreamSock(
@@ -119,7 +124,8 @@ namespace HTTP::HTTPAcceptor{
 					const std::string& path_to_root,
 					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
 					const std::string& ssl_cert = "",
-					const std::string& ssl_private_key = ""
+					const std::string& ssl_private_key = "",
+					const std::string& auth_credentials_file = ""
 					) noexcept override;
 			void HTTPStreamAccept() noexcept override;
 			~HTTPAcceptorSSL();

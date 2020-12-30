@@ -39,6 +39,7 @@ enable_testing()
 
 add_subdirectory(./libhttpserver)
 include_directories(./libhttpserver)
+include_directories(./vendor/libbcrypt/include)
 link_directories(./libhttpserver)
 add_subdirectory(./vendor)
 add_subdirectory(./vendor/json)

@@ -10,51 +10,7 @@
 #include "HTTPMessage.hpp"
 #include <nlohmann/json.hpp>
 
-std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage, HTTP::BasicAuth::BasicAuthHandler* auth_handler){
-	try{
-		// std::optional<std::string> Basic_auth_cred = HTTPClientMessage->GetHeaderValue("Authorization");
-		using json = nlohmann::json;
-		if(HTTPClientMessage->ConstGetHTTPHeader()->GetHeaderValue("Authorization").has_value()){
-			if(auth_handler->check_credentials("/poster", 
-						HTTP::BasicAuth::split_base64_from_scheme(HTTPClientMessage->ConstGetHTTPHeader()->GetHeaderValue("Authorization").value()).value())){
-				auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
-				int int_value = parsed_json["value_one"];
-				std::string string_value = parsed_json["value_two"];
-				std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
-				std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-				HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-				HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
-				HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-				HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-				HTTPResponseMessage->SetRawBody(std::move(returner));
-				return HTTPResponseMessage;
-			}else{
-				std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-				HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-				HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNAUTHORIZED);
-				HTTPResponseMessage->AddHeader("WWW-Authenticate", "Basic relm=\"/poster\"");
-				return HTTPResponseMessage;
-			}
-		}else{
-			std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNAUTHORIZED);
-			HTTPResponseMessage->AddHeader("WWW-Authenticate", "Basic relm=\"/poster_one\"");
-			return HTTPResponseMessage;
-		}
-	}catch(const std::exception& e){
-		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-		std::string returner = "Invalid request body, rejected by origin-server";
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-		HTTPResponseMessage->SetRawBody(std::move(returner));
-		return HTTPResponseMessage;
-	}
-}
-
-std::unique_ptr<HTTP::HTTPMessage> auth_call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage, HTTP::BasicAuth::BasicAuthHandler* auth_handler){
+std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage, HTTP::BasicAuth::BasicAuthHandler* auth_handler=nullptr){
 	try{
 		using json = nlohmann::json;
 		auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
@@ -73,6 +29,35 @@ std::unique_ptr<HTTP::HTTPMessage> auth_call_back(std::unique_ptr<HTTP::HTTPMess
 		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
 		std::string returner = "Invalid request body, rejected by origin-server";
 		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+		HTTPResponseMessage->SetResponseType("Bad Request");
+		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
+		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
+		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
+		HTTPResponseMessage->SetRawBody(std::move(returner));
+		return HTTPResponseMessage;
+	}
+}
+
+std::unique_ptr<HTTP::HTTPMessage> auth_call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage, HTTP::BasicAuth::BasicAuthHandler* auth_handler=nullptr){
+	try{
+		using json = nlohmann::json;
+		auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
+		int int_value = parsed_json["value_one"];
+		std::string string_value = parsed_json["value_two"];
+		std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
+		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
+		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
+		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
+		HTTPResponseMessage->SetRawBody(std::move(returner));
+		return HTTPResponseMessage;
+	}catch(const std::exception& e){
+		std::cout << "Invalid request from user-agent\n";
+		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+		std::string returner = "Invalid request body, rejected by origin-server";
+		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
+		HTTPResponseMessage->SetResponseType("Bad Request");
 		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
 		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
 		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
@@ -85,17 +70,16 @@ int main(int argc, const char* argv[]){
 
 	std::vector<HTTP::HTTPHandler::HTTPPostEndpoint> post_endpoint = { {"/poster","application/json", call_back} };
 
-	std::unique_ptr<HTTP::HTTPAcceptor::HTTPAcceptor> http_acceptor = std::make_unique<HTTP::HTTPAcceptor::HTTPAcceptorSSL>();
+	std::unique_ptr<HTTP::HTTPAcceptor::HTTPAcceptor> http_acceptor = std::make_unique<HTTP::HTTPAcceptor::HTTPAcceptorPlainText>();
 	http_acceptor->HTTPStreamSock(
 			"127.0.0.1", // IPv4 addr
 			9876, // bind port
 			10,  // backlog
-			HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER,  // server type (Plaintext/SSL)
+			HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER,  // server type (Plaintext/SSL)
 			"./configs/html_src", // HTML src-root (or your own path)
-			post_endpoint, // json endpoint and callback fn
-			"./cert.pem",
-			"./key.pem",
-			"./configs/sample_secure_REST_authfile_bcrypt.json"
+			post_endpoint // json endpoint and callback fn
+			// "./cert.pem",
+			// "./key.pem"
 			);
 	http_acceptor->HTTPStreamAccept();
 

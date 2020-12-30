@@ -9,6 +9,9 @@
 #include <sstream>
 #include <string>
 
+#define str6_cmp(m, c0, c1, c2, c3, c4, c5)		\
+	*(m)==c0 && *(m+1)==c1 && *(m+2)==c2 && *(m+3)==c3 && *(m+4)==c4 && *(m+5)==c5
+
 HTTP::BasicAuth::BasicAuthHandler::BasicAuthHandler(const std::string& cred_file)
 	: _auth_cred_filename{cred_file} {
 	this->m_populate_map();
@@ -149,4 +152,18 @@ HTTP::BasicAuth::BasicAuthHandler::m_basic_auth_cred_parser(const std::string& d
 bool HTTP::BasicAuth::is_control_character(const unsigned char value){
 	return (((value > static_cast<unsigned char>(0x1F)) && (value <= static_cast<unsigned char>(0x00)) && 
 			value != static_cast<unsigned char>(0x7F)));
+}
+
+std::optional<std::string> HTTP::BasicAuth::split_base64_from_scheme(const std::string& header_value){
+	if(str6_cmp(header_value.c_str(), 'B', 'a', 's', 'i', 'c', ' ')){
+		std::string returner;	
+		const char* base64_value = (header_value.c_str()+6);
+		while(*base64_value != '\0'){
+			returner.push_back(*base64_value);
+			base64_value++;
+		}
+		return returner;
+	}else{
+		return std::nullopt;
+	}
 }
