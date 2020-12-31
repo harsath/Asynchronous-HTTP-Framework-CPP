@@ -1,4 +1,5 @@
 #include "HTTPAcceptor.hpp"
+#include "HTTPBasicAuthHandler.hpp"
 #include "HTTPLogHelpers.hpp"
 #include "HTTPResponder.hpp"
 #include "HTTPSSLHelpers.hpp"
@@ -24,7 +25,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 		const std::string& path_to_root,
 		const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints,
 		const std::string& ssl_cert,
-		const std::string& ssl_private_key
+		const std::string& ssl_private_key,
+		const std::string& auth_cred_file	
 		) noexcept {
 
 	using namespace Transport;
@@ -44,6 +46,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 		this->_http_handler_ptr->HTTPCreateEndpoint(std::move(http_post_endpoints.at(i)));	
 	}
 	this->_HTTPLogHandler = new HTTP::LOG::AccessContext("HTTP-Plaintext.log");
+	if(auth_cred_file != "")
+		this->_http_basic_auth_handler = new HTTP::BasicAuth::BasicAuthHandler{auth_cred_file};
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
@@ -54,6 +58,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER;
 		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
+		this->_HTTPContext->BasicAuthHandler = this->_http_basic_auth_handler;
+
 		int client_fd = this->_TCPEndpoint.accept_loop();
 		bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
 		if(sentinel_check){
@@ -86,7 +92,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamSock(
 		const std::string& path_to_root,
 		const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints,
 		const std::string& ssl_cert,
-		const std::string& ssl_private_key
+		const std::string& ssl_private_key,
+		const std::string& auth_cred_file
 		) noexcept {
 
 	this->_SSLContext = HTTP::SSL::HTTPConfigSSLContext(ssl_cert.c_str(), ssl_private_key.c_str());
@@ -102,13 +109,13 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamSock(
 	this->_TCPEndpoint = std::move(tcp_endpoint_move);
 	this->_TCPEndpoint.bind_sock();	
 
-
-	
 	this->_http_handler_ptr = std::make_unique<HTTP::HTTPHandler::HTTPHandler>(path_to_root);
 	for(std::size_t i{}; i < http_post_endpoints.size(); i++){
 		this->_http_handler_ptr->HTTPCreateEndpoint(std::move(http_post_endpoints.at(i)));	
 	}
-
+	this->_HTTPLogHandler = new HTTP::LOG::AccessContext("HTTP-SSL.log");
+	if(auth_cred_file.size() != 0)
+		this->_http_basic_auth_handler = new HTTP::BasicAuth::BasicAuthHandler{auth_cred_file};
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
@@ -120,6 +127,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
 		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER;
 		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
+		this->_HTTPContext->BasicAuthHandler = this->_http_basic_auth_handler;
 
 		int client_fd = this->_TCPEndpoint.accept_loop();
 		bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");

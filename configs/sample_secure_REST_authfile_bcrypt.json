@@ -1,0 +1,10 @@
+{
+	"/poster": {
+		"user_one": "$2b$12$k3cyxReeGdvJAFXlygYaEexlBdpmYfM35CUB0FlkC8PCrolWo27u6",
+		"user_two": "$2b$12$4MmSHv0AIZaOmKBhrMwVuOr/x1snQq5OgWnxSC15eth5CPoEzzftu"
+	},
+	"/poster_two": {
+		"user_three": "$2b$12$OHyTedhzChYy9yqPJRJulOlGx3IdN9zsquIAZ/RiTnXLWKrGq980K",
+		"user_four": "$2b$12$6pgvei/0hWV0p1ajWWc3wugeWBSKhgdf/Pv20gXbAYDIOnGOkl3HW"
+	}
+}

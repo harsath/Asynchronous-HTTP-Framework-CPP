@@ -44,6 +44,7 @@ set(
 	./test-HTTPParser.cpp
 	./test-VendorBase64.cpp
 	./test-HTTPBasicAuthHandler.cpp
+	./test-HTTPCommonMessageTemplates.cpp
 	)
 
 include_directories(../vendor/libbcrypt/include)

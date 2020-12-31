@@ -49,4 +49,19 @@ TEST(HTTPBasicAuthHandler_parser_test, HTTPBasicAuthHandler){
 		std::string user_foo_post_two_endpint = "/post_two";
 		ASSERT_FALSE(auth_handler->check_credentials(user_foo_post_two_endpint, user_foo_post_two_correct));
 	}
+
+	{
+		std::string sample_header_value = "Basic dXNlcl9iYXI6cGFzc3dvcmRIYXNoNjQlXio=";
+		std::string splitted_value = "dXNlcl9iYXI6cGFzc3dvcmRIYXNoNjQlXio=";
+		std::optional<std::string> base64_splitter = HTTP::BasicAuth::split_base64_from_scheme(sample_header_value);
+		ASSERT_EQ(base64_splitter.has_value(), true);
+		ASSERT_EQ(base64_splitter.value(), "dXNlcl9iYXI6cGFzc3dvcmRIYXNoNjQlXio=");
+	}
+
+	{
+		std::string sample_header_value = "Basc dXNlcl9iYXI6cGFzc3dvcmRIYXNoNjQlXio=";
+		std::string splitted_value = "dXNlcl9iYXI6cGFzc3dvcmRIYXNoNjQlXio=";
+		std::optional<std::string> base64_splitter = HTTP::BasicAuth::split_base64_from_scheme(sample_header_value);
+		ASSERT_EQ(base64_splitter.has_value(), false);
+	}
 }

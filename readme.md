@@ -23,13 +23,14 @@ $ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 
 Now, run the server with `./server`
 
+#### Note: The examples in `./examples` are NOT updated. I will update them when I find time ASAP. Checkout main.cpp and main-plain.cpp for updated code for now.
 Checkout the `./examples` dir for more info on using Callbacks and REST API examples.
 
 You can checkout the libHTTPserver's architecture in `HTTP-Server-Arch.jpg`
 
 5. You can now, test the SSL/HTTPS server through cURL or openssl's s_client
 ```
-$ curl --insecure -v -H "Content-Type: application/json" -d '{"value_one":123,"value_two":"Hello"}' https://127.0.0.1:9876/poster
+$ curl --insecure -u 'username:password$324'-v -H "Content-Type: application/json" -d '{"value_one":123,"value_two":"Hello"}' https://127.0.0.1:9876/poster
 *   Trying 127.0.0.1:9876...
 * Connected to 127.0.0.1 (127.0.0.1) port 9876 (#0)
 * ALPN, offering http/1.1
@@ -54,6 +55,7 @@ $ curl --insecure -v -H "Content-Type: application/json" -d '{"value_one":123,"v
 *  SSL certificate verify result: self signed certificate (18), continuing anyway.
 > POST /poster HTTP/1.1
 > Host: 127.0.0.1:9876
+> Authorization: Basic dXNlcl90d286UGFzc3dvcmQy
 > User-Agent: curl/7.71.1
 > Accept: */*
 > Content-Type: application/json

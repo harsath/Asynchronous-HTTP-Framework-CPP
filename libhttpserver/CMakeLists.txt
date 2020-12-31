@@ -44,6 +44,7 @@ set(
 	./TCPEndpoint.hpp
 	./HTTPBasicAuthHandler.hpp
 	./HTTPBasicAuthHandler.cpp
+	./HTTPCommonMessageTemplates.hpp
 	)
 add_library(
 	${LIB_BIN_NAME} 

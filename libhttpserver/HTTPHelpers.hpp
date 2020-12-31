@@ -34,6 +34,7 @@
 #include <unistd.h>
 #include <chrono>
 #include <fmt/format.h>
+#include "HTTPBasicAuthHandler.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPLogHelpers.hpp"
 #include "HTTPSSLHelpers.hpp"
@@ -54,6 +55,7 @@ namespace HTTP::HTTPHelpers{
 		std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter> SSLConnectionHandler;
 		bool HTTPWritten{false};
 		HTTPServerInfo ServerInfo;		
+		HTTP::BasicAuth::BasicAuthHandler* BasicAuthHandler{nullptr};
 	};
 
 	struct Post_keyvalue{
@@ -120,7 +122,7 @@ namespace HTTP::HTTPHelpers{
 	inline void HTTPGenerateRouteMap(std::unordered_map<std::string, std::string>& map_ref, const std::string& path_to_root){
 		for(auto& files : std::filesystem::directory_iterator(path_to_root)){
 			map_ref.emplace(std::make_pair(
-					std::move(std::string{"/"}+std::string(std::move(files.path().filename()))),
+					std::string{"/"}+std::string(std::move(files.path().filename())),
 					std::move(files.path())
 						));
 		}

@@ -1,0 +1,10 @@
+{
+	"/poster": {
+		"user_one": "Password1",
+		"user_two": "Password2"
+	},
+	"/poster_two": {
+		"user_three": "Password3",
+		"user_four": "Password4"
+	}
+}
