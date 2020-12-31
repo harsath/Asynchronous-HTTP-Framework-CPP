@@ -10,7 +10,7 @@ namespace HTTP::MessageTemplates{
 		NOT_ACCEPTABLE=406, METHOD_NOT_ALLOWED=405, UNSUPPORTED_MEDIA_TYPE=415, CREATED=201,
 		MOVED_PERMANENTLY=301, UNAUTHORIZED=401, BASIC_AUTH_UNAUTHORIZED
 	};
-	std::unique_ptr<HTTPMessage> GenerateHTTPMessage(const Type& response_code, const std::string& http_message_body=""){
+	inline std::unique_ptr<HTTPMessage> GenerateHTTPMessage(const Type& response_code, const std::string& http_message_body=""){
 		std::unique_ptr<HTTPMessage> response_message = std::make_unique<HTTPMessage>();
 		switch(response_code){
 			case MessageTemplates::OK:

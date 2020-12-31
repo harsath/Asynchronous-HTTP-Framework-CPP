@@ -6,77 +6,39 @@
 #include <iostream>
 #include "HTTPAcceptor.hpp"
 #include "HTTPBasicAuthHandler.hpp"
+#include "HTTPCommonMessageTemplates.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPMessage.hpp"
 #include <nlohmann/json.hpp>
 
 std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage, HTTP::BasicAuth::BasicAuthHandler* auth_handler){
+	using namespace HTTP;
 	try{
-		// std::optional<std::string> Basic_auth_cred = HTTPClientMessage->GetHeaderValue("Authorization");
 		using json = nlohmann::json;
-		if(HTTPClientMessage->ConstGetHTTPHeader()->GetHeaderValue("Authorization").has_value()){
-			if(auth_handler->check_credentials("/poster", 
-						HTTP::BasicAuth::split_base64_from_scheme(HTTPClientMessage->ConstGetHTTPHeader()->GetHeaderValue("Authorization").value()).value())){
-				auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
-				int int_value = parsed_json["value_one"];
-				std::string string_value = parsed_json["value_two"];
-				std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
-				std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-				HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-				HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
-				HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-				HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-				HTTPResponseMessage->SetRawBody(std::move(returner));
-				return HTTPResponseMessage;
-			}else{
-				std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-				HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-				HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNAUTHORIZED);
-				HTTPResponseMessage->AddHeader("WWW-Authenticate", "Basic relm=\"/poster\"");
-				return HTTPResponseMessage;
-			}
-		}else{
-			std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNAUTHORIZED);
-			HTTPResponseMessage->AddHeader("WWW-Authenticate", "Basic relm=\"/poster_one\"");
+		if(!HTTPClientMessage->GetHeaderValue("Authorization").has_value()){
+			std::unique_ptr<HTTPMessage> HTTPResponseMessage = 
+				MessageTemplates::GenerateHTTPMessage(MessageTemplates::BASIC_AUTH_UNAUTHORIZED, "/poster");
 			return HTTPResponseMessage;
 		}
-	}catch(const std::exception& e){
-		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-		std::string returner = "Invalid request body, rejected by origin-server";
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-		HTTPResponseMessage->SetRawBody(std::move(returner));
-		return HTTPResponseMessage;
-	}
-}
+		if(!auth_handler->check_credentials("/poster", 
+					BasicAuth::split_base64_from_scheme(
+						HTTPClientMessage->GetHeaderValue("Authorization").value()).value())){
+			std::unique_ptr<HTTPMessage> HTTPResponseMessage = 
+				MessageTemplates::GenerateHTTPMessage(MessageTemplates::BASIC_AUTH_UNAUTHORIZED, "/poster");
+			return HTTPResponseMessage;
+		}
 
-std::unique_ptr<HTTP::HTTPMessage> auth_call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage, HTTP::BasicAuth::BasicAuthHandler* auth_handler){
-	try{
-		using json = nlohmann::json;
 		auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
 		int int_value = parsed_json["value_one"];
 		std::string string_value = parsed_json["value_two"];
-		std::string returner = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
-		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::CREATED);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-		HTTPResponseMessage->SetRawBody(std::move(returner));
+		std::string response_body = "value_one: " + std::to_string(int_value) + " value_two: " + string_value;
+		std::unique_ptr<HTTPMessage> HTTPResponseMessage = 
+			MessageTemplates::GenerateHTTPMessage(MessageTemplates::CREATED, std::move(response_body));
 		return HTTPResponseMessage;
 	}catch(const std::exception& e){
-		std::cout << "Invalid request from user-agent\n";
-		std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
-		std::string returner = "Invalid request body, rejected by origin-server";
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(returner.size()));
-		HTTPResponseMessage->SetRawBody(std::move(returner));
+		std::string response_body = "Invalid request body, rejected by origin-server";
+		std::unique_ptr<HTTPMessage> HTTPResponseMessage = 
+			MessageTemplates::GenerateHTTPMessage(MessageTemplates::BAD_REQUEST, std::move(response_body));
 		return HTTPResponseMessage;
 	}
 }

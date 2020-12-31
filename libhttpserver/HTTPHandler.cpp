@@ -1,5 +1,6 @@
 #include "HTTPHandler.hpp"
 #include "HTTPBasicAuthHandler.hpp"
+#include "HTTPCommonMessageTemplates.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPHeaders.hpp"
 #include "HTTPHelpers.hpp"
@@ -14,33 +15,32 @@
 HTTP::HTTPHandler::HTTPHandler::HTTPHandler(const std::string& path_to_root){
 	this->_path_to_routesfile = std::move(path_to_root);
 	// 					  /filename.html		    /path/to/filename.html
-	HTTP::HTTPHelpers::HTTPGenerateRouteMap(this->_filename_and_filepath_map, this->_path_to_routesfile);
+	HTTPHelpers::HTTPGenerateRouteMap(this->_filename_and_filepath_map, this->_path_to_routesfile);
 }
 
 void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
-				std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext,
+				std::unique_ptr<HTTPHelpers::HTTPTransactionContext> HTTPContext,
 				char* raw_read_buffer, 
 				std::size_t raw_read_size){
+	using namespace HTTP;
 
 	this->_HTTPContext = std::move(HTTPContext);
 
 	// SSL-client Handshake packet to a plaintext port(close connection)
 	if(!(raw_read_buffer[0] ^ 0x16) && 
-			(_HTTPContext->HTTPServerType == HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER) && 
+			(_HTTPContext->HTTPServerType == HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER) && 
 			!(raw_read_buffer[1] ^ 0x03)){
 		return;
 	}
 
-	HTTP::HTTPConst::HTTP_RESPONSE_CODE tmp_http_message_paser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
+	HTTPConst::HTTP_RESPONSE_CODE tmp_http_message_paser_status = HTTPConst::HTTP_RESPONSE_CODE::OK;
 	this->_HTTPMessage = std::make_unique<HTTPMessage>(
 			raw_read_buffer, tmp_http_message_paser_status
 			);
 
 	if(this->_HTTPMessage->ParsedSuccessfully()){
 		this->_HTTPContext->HTTPResponseState = this->_HTTPMessage->GetResponseCode();
-
 		this->_HTTPContext->HTTPLogHolder.resource = this->_HTTPMessage->GetTargetResource();
-
 		std::optional<std::string> user_agent = this->_HTTPMessage->ConstGetHTTPHeader()->GetHeaderValue("User-Agent");
 
 		if(user_agent.has_value())
@@ -48,18 +48,18 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPHandleConnection(
 		else
 			this->_HTTPContext->HTTPLogHolder.useragent = "Unknown";
 
-		this->_HTTPContext->HTTPLogHolder.date = HTTP::HTTPHelpers::get_today_date_full();
-
+		this->_HTTPContext->HTTPLogHolder.date = HTTPHelpers::get_today_date_full();
 		this->HTTPResponseHandler();
 	}else{
-		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST;
+		this->_HTTPContext->HTTPResponseState = HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST;
 		this->HTTPResponseHandler();
 	}
 }
 
 void HTTP::HTTPHandler::HTTPHandler::HTTPResponseHandler() noexcept {
+	using namespace HTTP;
 	// Im using GET's ResponseHandler for sendingout Bad Request because the impl checks HTTPTransactionContext, avoiding repetition
-	if(this->_HTTPMessage->GetRequestType() == "GET" || this->_HTTPContext->HTTPResponseState == HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
+	if(this->_HTTPMessage->GetRequestType() == "GET" || this->_HTTPContext->HTTPResponseState == HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
 		std::unique_ptr<HTTP::HTTPHandler::HTTPGETResponseHandler> GetRequestHandler = 
 			std::make_unique<HTTP::HTTPHandler::HTTPGETResponseHandler>(
 					std::move(this->_HTTPMessage), std::move(this->_HTTPContext),
@@ -90,52 +90,33 @@ void HTTP::HTTPHandler::HTTPHandler::HTTPCreateEndpoint(
 
 // Implementation of HTTPHEADResponseHandler (HTTP HEAD request method processor)
 HTTP::HTTPHandler::HTTPHEADResponseHandler::HTTPHEADResponseHandler(
-			std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage_,
-			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext_,
+			std::unique_ptr<HTTPMessage> HTTPClientMessage_,
+			std::unique_ptr<HTTPHelpers::HTTPTransactionContext> HTTPContext_,
 			const std::unordered_map<std::string, std::string>& filename_and_filepath_map_){
+	using namespace HTTP;
 
-	std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);	
-	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
+	std::unique_ptr<HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);
+	std::unique_ptr<HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
 	std::unordered_map<std::string, std::string> filename_and_filepath_map = std::move(filename_and_filepath_map_);
 	
 	// Response message object to user-agent
-	std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+	std::unique_ptr<HTTPMessage> HTTPResponseMessage;
 	// Bad Request if the request cannot be parsed/Malformed request from user-agent
-	if(HTTPContext->HTTPResponseState == HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
-		std::string response_body = "<html><h2> 400 Bad Request, please check your request </h2></html>";
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(response_body.size()));
+	if(HTTPContext->HTTPResponseState == HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
+		HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::BAD_REQUEST);
 		HTTPContext->HTTPLogHolder.log_message = "Serving user with 400 Bad Request";
 	}else{
 		// Checking if the target-resource matches the one from the www-root
 		if(filename_and_filepath_map.contains(HTTPClientMessage->GetTargetResource())){ // If so
-			std::string raw_body = HTTP::HTTPHelpers::read_file(
-					filename_and_filepath_map.at(HTTPClientMessage->GetTargetResource())
-					);
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
-			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
+			HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::OK);
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
 
 		}else if(HTTPClientMessage->GetTargetResource() == "/"){
-			std::string raw_body = HTTP::HTTPHelpers::read_file(
-					filename_and_filepath_map.at("/index.html")
-					);
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
-			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
+			HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::OK);
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
 
 		}else{
-			std::string raw_body = "<html><h2> Oops, 404 Not Found :( </h2></html>";
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND);
-			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
+			HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::NOT_FOUND);
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
 		}
 	}
@@ -153,47 +134,32 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 	std::unordered_map<std::string, std::string> filename_and_filepath_map = std::move(filename_and_filepath_map_);
 	
 	// Response message object to user-agent
-	std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+	std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage;
 	// Bad Request if the request cannot be parsed/Malformed request from user-agent
 	if(HTTPContext->HTTPResponseState == HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST){
 		std::string response_body = "<html><h2> 400 Bad Request, please check your request </h2></html>";
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(response_body.size()));
-		HTTPResponseMessage->SetRawBody(std::move(response_body));
+		HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::BAD_REQUEST, std::move(response_body));
 		HTTPContext->HTTPLogHolder.log_message = "Serving user with 400 Bad Request";
 	}else{
 		// Checking if the target-resource matches the one from the www-root
 		if(filename_and_filepath_map.contains(HTTPClientMessage->GetTargetResource())){ // If so
-			std::string raw_body = HTTP::HTTPHelpers::read_file(
+			// TODO: Here we need to do something like folly::IOBuf
+			std::string response_body = HTTPHelpers::read_file(
 					filename_and_filepath_map.at(HTTPClientMessage->GetTargetResource())
 					);
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
-			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
-			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::OK, std::move(response_body));
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
 
 		}else if(HTTPClientMessage->GetTargetResource() == "/"){
-			std::string raw_body = HTTP::HTTPHelpers::read_file(
+			// TODO: Again, we need to think of folly::IOBuf
+			std::string response_body = HTTP::HTTPHelpers::read_file(
 					filename_and_filepath_map.at("/index.html")
 					);
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
-			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
-			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::OK, std::move(response_body));
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";
-
 		}else{
-			std::string raw_body = "<html><h2> Oops, 404 Not Found :( </h2></html>";
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::NOT_FOUND);
-			HTTPResponseMessage->AddHeader("Content-Type", "text/html");
-			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
-			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			std::string response_body = "<html><h2> Oops, 404 Not Found :( </h2></html>";
+			HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::NOT_FOUND, std::move(response_body));
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
 		}
 	}
@@ -232,10 +198,11 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 					std::pair<std::string, 
 					std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>, HTTP::BasicAuth::BasicAuthHandler*)>>
 					>& post_endpoint_and_callbacks){
-	std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);
-	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
+	using namespace HTTP;
+	std::unique_ptr<HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);
+	std::unique_ptr<HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
 
-	std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::make_unique<HTTP::HTTPMessage>();
+	std::unique_ptr<HTTPMessage> HTTPResponseMessage;
 	
 	// Checking if request's target POST endpoint is supported
 	if(post_endpoint_and_callbacks.contains(HTTPClientMessage->GetTargetResource())){
@@ -281,24 +248,14 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 					break;
 			}
 		}else{
-			std::string raw_body = "This endpoint only supports " + post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).first;
-			HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-			HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::UNSUPPORTED_MEDIA_TYPE);
-			HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-			HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
-			HTTPResponseMessage->SetRawBody(std::move(raw_body));
+			std::string response_body = "This endpoint only supports " + post_endpoint_and_callbacks.at(HTTPClientMessage->GetTargetResource()).first;
+			HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::UNSUPPORTED_MEDIA_TYPE, std::move(response_body));
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 415 Unsupported Media Type";
 		}
 	}else{
-		std::string raw_body = "405 Method Not Allowed. No such endpoints";
-		HTTPResponseMessage->SetHTTPVersion("HTTP/1.1");
-		HTTPResponseMessage->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::METHOD_NOT_ALLOWED);
-		HTTPResponseMessage->AddHeader("Content-Type", "text/plain");
-		HTTPResponseMessage->AddHeader("Content-Length", std::to_string(raw_body.size()));
-		HTTPResponseMessage->SetRawBody(std::move(raw_body));
+		std::string response_body = "405 Method Not Allowed. No such endpoints";
+		HTTPResponseMessage = MessageTemplates::GenerateHTTPMessage(MessageTemplates::METHOD_NOT_ALLOWED, std::move(response_body));
 		HTTPContext->HTTPLogHolder.log_message = "Serving user with 405 Method Not Allowed";
 	}
-
 	HTTP::HTTPHandler::HTTPResponseProcessor(std::move(HTTPContext), std::move(HTTPResponseMessage));
-
 }

@@ -20,14 +20,13 @@ HTTP::BasicAuth::BasicAuthHandler::BasicAuthHandler(const std::string& cred_file
 void HTTP::BasicAuth::BasicAuthHandler::m_populate_map(){
 	std::ifstream cred_stream{this->_auth_cred_filename};
 	std::string file_data;
-	if(cred_stream.is_open()){
-		std::string line;
-		while(std::getline(cred_stream, line)){
-			file_data.append(line);
-		}
-	}else{
+	if(!cred_stream.is_open()){
 	 	perror("Unable to open API auth file for REST services\n");
 		::exit(1);
+	}
+	std::string line;
+	while(std::getline(cred_stream, line)){
+		file_data.append(line);
 	}
 	cred_stream.close();
 	auto json_reader = nlohmann::json::parse(file_data);
@@ -45,25 +44,17 @@ bool HTTP::BasicAuth::BasicAuthHandler::check_credentials(
 		this->m_basic_auth_cred_parser(base64::b64decode(
 					reinterpret_cast<const unsigned char*>(encoded_auth_param.c_str()), encoded_auth_param.size()
 					));
-	if(parsed_results.has_value()){
-		if(this->_endpoint_cred_map.contains(endpoint)){
-			const std::vector<std::pair<std::string, std::string>>& user_creds = 
-				this->_endpoint_cred_map.at(endpoint);
-			auto result = std::find_if(std::begin(user_creds), std::end(user_creds), 
-					[&parsed_results](const std::pair<std::string, std::string>& values) -> bool {
-						return ((values.first == parsed_results.value().first) && BCrypt::validatePassword(parsed_results.value().second, values.second));
-					});
-			if(result != std::end(user_creds)){
-				return true;
-			}else{
-				return false;
-			}
-		}else{	// user-agent sent a User:Pass even though the endpoint does not need authorization
-			return true;
-		}
-	}else{
-		return false;
-	}
+	if(!parsed_results.has_value()){ return false; }
+	// user-agent sent a User:Pass even though the endpoint does not need authorization
+	if(!this->_endpoint_cred_map.contains(endpoint)){ return true; }
+	const std::vector<std::pair<std::string, std::string>>& user_creds = this->_endpoint_cred_map.at(endpoint);
+	auto result = std::find_if(std::begin(user_creds), std::end(user_creds), 
+			[&parsed_results](const std::pair<std::string, std::string>& values) -> bool {
+				return ((values.first == parsed_results.value().first) && 
+						BCrypt::validatePassword(parsed_results.value().second, values.second));
+			});
+	if(result == std::end(user_creds)){ return false; }
+	return true;
 }
 
 std::optional<std::pair<std::string, std::string>> 
@@ -155,15 +146,12 @@ bool HTTP::BasicAuth::is_control_character(const unsigned char value){
 }
 
 std::optional<std::string> HTTP::BasicAuth::split_base64_from_scheme(const std::string& header_value){
-	if(str6_cmp(header_value.c_str(), 'B', 'a', 's', 'i', 'c', ' ')){
-		std::string returner;	
-		const char* base64_value = (header_value.c_str()+6);
-		while(*base64_value != '\0'){
-			returner.push_back(*base64_value);
-			base64_value++;
-		}
-		return returner;
-	}else{
-		return std::nullopt;
+	if(!(str6_cmp(header_value.c_str(), 'B', 'a', 's', 'i', 'c', ' '))){ return std::nullopt; }
+	std::string returner;	
+	const char* base64_value = (header_value.c_str()+6);
+	while(*base64_value != '\0'){
+		returner.push_back(*base64_value);
+		base64_value++;
 	}
+	return returner;
 }
