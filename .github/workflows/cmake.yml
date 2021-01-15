@@ -27,6 +27,7 @@ jobs:
                                 sudo apt-get update -y
                                 sudo apt install libcrypto++-dev libssl-dev openssl -y
                                 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+                                sudo apt-get install ninja-build php -y
                                 sudo apt install cmake curl -y
                                 sudo apt install gcc-9 g++-9
                                 echo -e "\nGCC VERSION:\n"
@@ -39,5 +40,4 @@ jobs:
                         - name: Configuring and Build
                           shell: bash
                           run: |
-                                chmod +x ./CI-scripts/build_run_tests_CI.sh
-                                bash ./CI-scripts/build_run_tests_CI.sh
+                                php ./CI-scripts/build_run_tests.php _build
