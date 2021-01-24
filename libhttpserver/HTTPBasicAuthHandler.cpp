@@ -1,6 +1,6 @@
 #include "HTTPBasicAuthHandler.hpp"
 #include "nlohmann/json.hpp"
-#include "base64.hpp"
+#include "internal/base64.hpp"
 #include <algorithm>
 #include <iostream>
 #include <fstream>
