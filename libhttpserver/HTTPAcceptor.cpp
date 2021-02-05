@@ -63,6 +63,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
 		int client_fd = this->_TCPEndpoint.accept_loop();
 		bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
 		if(sentinel_check){
+			// recv()
 			this->_TCPEndpoint.read_buff(this->_acceptor_read_buff, this->_acceptor_read_buff_size);
 
 			this->_HTTPContext->HTTPClientFD = client_fd;
