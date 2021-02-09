@@ -4,7 +4,6 @@ set(
 	INTERNAL_SRC_FILES
 	./internal/base64.hpp
 	./internal/AsyncHelpers.hpp
-	./internal/ConcurrentQueue.hpp
 )
 set(
 	SRC_LIB_FILES
@@ -26,7 +25,6 @@ set(
 	./HTTPSSLHelpers.hpp
 	./HTTPParser.cpp
 	./HTTPParser.hpp
-	./TCPEndpoint.hpp
 	./HTTPBasicAuthHandler.hpp
 	./HTTPBasicAuthHandler.cpp
 	./HTTPCommonMessageTemplates.hpp
@@ -41,6 +39,7 @@ set_target_properties(
 	)
 
 include_directories(../vendor/libbcrypt/include)
+include_directories(../vendor/Blueth/blueth)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(Threads REQUIRED)
@@ -60,4 +59,5 @@ target_link_libraries(
 	Threads::Threads
 	bcrypt
 	3rd_party
+	libblueth
 	)

@@ -30,6 +30,7 @@
 #include <string>
 #include <fstream>
 #include <sys/socket.h>
+#include <net/Socket.hpp>
 #include <string.h>
 #include <sys/types.h>
 #include <tuple>
@@ -42,7 +43,7 @@
 #include "HTTPSSLHelpers.hpp"
 #include "HTTPHandler.hpp"
 #include "HTTPParserRoutine.hpp"
-#include "TCPEndpoint.hpp"
+//#include <net/TcpEndpoint.hpp>
 #include "HTTPLogHelpers.hpp"
 #include <vector>
 #include <unordered_map>
@@ -57,6 +58,7 @@
 #define TCP_KEEPIDLE TCP_KEEPALIVE
 #endif
 
+using namespace blueth;
 namespace HTTP::HTTPAcceptor{
 	class HTTPAcceptor{
 		public:
@@ -64,7 +66,6 @@ namespace HTTP::HTTPAcceptor{
 					const std::string& server_addr,
 					const std::uint16_t server_port,
 					int server_backlog,
-					HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
 					const std::string& path_to_root,
 					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
 					const std::string& ssl_cert = "",
@@ -72,65 +73,66 @@ namespace HTTP::HTTPAcceptor{
 					const std::string& auth_credentials_file = ""
 					) noexcept = 0;
 
-			virtual void HTTPStreamAccept() noexcept = 0;
+			virtual void HTTPRunEventloop() = 0;
 			virtual ~HTTPAcceptor() = default;
 	};
 
 	class HTTPAcceptorPlainText final : public HTTPAcceptor{
 		private:
-			HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
-			Transport::TCPEndpoint _TCPEndpoint;
-			constexpr static std::size_t _acceptor_read_buff_size = 2048;
-			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
-			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
-			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
-			HTTP::LOG::LoggerHelper* _HTTPLogHandler;
+			//constexpr static std::size_t _acceptor_read_buff_size = 2048;
+			//char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
+			//std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
+			//std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
+			//HTTP::LOG::LoggerHelper* _HTTPLogHandler;
 			HTTP::BasicAuth::BasicAuthHandler* _http_basic_auth_handler{nullptr};
+			net::Transport::Socket _plain_socket;	
+			std::string _path_to_root;
+			std::vector<HTTP::HTTPHandler::HTTPPostEndpoint> _http_post_endpoints;
+			std::string _auth_credentials_file;
 		public:
 			explicit HTTPAcceptorPlainText(){}
 			void HTTPStreamSock(
 					const std::string& server_addr,
 					const std::uint16_t server_port,
 					int server_backlog,
-					HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
 					const std::string& path_to_root,
 					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
 					const std::string& ssl_cert = "",
 					const std::string& ssl_private_key = "",
 					const std::string& auth_credentials_file = ""
 					) noexcept override;
-			void HTTPStreamAccept() noexcept override;
+			void HTTPRunEventloop() override;
 			~HTTPAcceptorPlainText();
 	};
 
-	class HTTPAcceptorSSL final : public HTTPAcceptor{
-		private:
-			HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
-			Transport::TCPEndpoint _TCPEndpoint;
-			constexpr static std::size_t _acceptor_read_buff_size = 2048;
-			char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
-			std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
-			std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
-			std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> _SSLContext;
-			HTTP::LOG::LoggerHelper* _HTTPLogHandler;
-			HTTP::BasicAuth::BasicAuthHandler* _http_basic_auth_handler;
-		public:
-			explicit HTTPAcceptorSSL(){}
-			void HTTPStreamSock(
-					const std::string& server_addr,
-					const std::uint16_t server_port,
-					int server_backlog,
-					HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
-					const std::string& path_to_root,
-					const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
-					const std::string& ssl_cert = "",
-					const std::string& ssl_private_key = "",
-					const std::string& auth_credentials_file = ""
-					) noexcept override;
-			void HTTPStreamAccept() noexcept override;
-			~HTTPAcceptorSSL();
-
-	};
+	// class HTTPAcceptorSSL final : public HTTPAcceptor{
+	// 	private:
+	// 		HTTP::HTTPConst::HTTP_SERVER_TYPE _server_type;
+	// 		constexpr static std::size_t _acceptor_read_buff_size = 2048;
+	// 		char _acceptor_read_buff[_acceptor_read_buff_size + 1] = "";
+	// 		std::unique_ptr<HTTP::HTTPHandler::HTTPHandler> _http_handler_ptr;
+	// 		std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> _HTTPContext;
+	// 		std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> _SSLContext;
+	// 		HTTP::LOG::LoggerHelper* _HTTPLogHandler;
+	// 		HTTP::BasicAuth::BasicAuthHandler* _http_basic_auth_handler;
+	// 	public:
+	// 		explicit HTTPAcceptorSSL(){}
+	// 		void HTTPStreamSock(
+	// 				const std::string& server_addr,
+	// 				const std::uint16_t server_port,
+	// 				int server_backlog,
+	// 				HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
+	// 				const std::string& path_to_root,
+	// 				const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints = {},
+	// 				const std::string& ssl_cert = "",
+	// 				const std::string& ssl_private_key = "",
+	// 				const std::string& auth_credentials_file = ""
+	// 				) noexcept override;
+	// 		void HTTPStreamAccept() noexcept override;
+	// 		void HTTPRunEventloop() override {}
+	// 		~HTTPAcceptorSSL();
+        //
+	// };
 
 
 } // end namespace HTTP::HTTPAcceptor

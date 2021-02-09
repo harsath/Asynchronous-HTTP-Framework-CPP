@@ -1,4 +1,5 @@
 #include "HTTPMessage.hpp"
+#include <io/IOBuffer.hpp>
 #include "HTTPConstants.hpp"
 #include "HTTPHeaders.hpp"
 #include "HTTPParserRoutine.hpp"
@@ -13,6 +14,7 @@ HTTP::HTTPMessage::HTTPMessage(
 		const char* raw_read_buffer,
 		HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status
 		){
+	using namespace HTTP::HTTP1Parser;
 #if !StateMachineParser // we always prefer state-machine parser in here(well, we try to)
 	this->_http_parser_status = http_parser_status;
 	std::pair<std::string, std::string> header_and_body_pair = 
@@ -26,10 +28,10 @@ HTTP::HTTPMessage::HTTPMessage(
 	this->_request_type = request_line_splitted.at(0);
 	this->_request_target = request_line_splitted.at(1);
 	this->_http_version = request_line_splitted.at(2);
-
 	this->_raw_body = std::move(header_and_body_pair.second);
 #else
 	HTTP::HTTP1Parser::HTTPParser parsed_message{raw_read_buffer};
+	HTTP11Parser(std::unique_ptr<blueth::io::IOBuffer<char> >, ParserState, std::unique_ptr<HTTP::HTTPMessage>)
 	parsed_message.ParseBytes();
 	std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> get_parsed_message = 
 			parsed_message.GetParsedMessage();

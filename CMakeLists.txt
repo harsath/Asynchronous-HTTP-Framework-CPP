@@ -40,9 +40,11 @@ enable_testing()
 add_subdirectory(./libhttpserver)
 include_directories(./libhttpserver)
 include_directories(./vendor/libbcrypt/include)
+include_directories(./vendor/Blueth/blueth)
 link_directories(./libhttpserver)
 add_subdirectory(./vendor)
 add_subdirectory(./vendor/json)
+add_subdirectory(./vendor/Blueth/blueth)
 add_subdirectory(./vendor/googletest)
 add_subdirectory(./vendor/fmt)
 add_subdirectory(./vendor/libbcrypt)
@@ -60,6 +62,7 @@ target_link_libraries(
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
 	3rd_party
+	libblueth
 	)
 
 set_target_properties(
