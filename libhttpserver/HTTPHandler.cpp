@@ -98,7 +98,7 @@ HTTP::HTTPHandler::HTTPHEADResponseHandler::HTTPHEADResponseHandler(
 	std::unique_ptr<HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);
 	std::unique_ptr<HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
 	std::unordered_map<std::string, std::string> filename_and_filepath_map = std::move(filename_and_filepath_map_);
-	
+
 	// Response message object to user-agent
 	std::unique_ptr<HTTPMessage> HTTPResponseMessage;
 	// Bad Request if the request cannot be parsed/Malformed request from user-agent
@@ -120,7 +120,7 @@ HTTP::HTTPHandler::HTTPHEADResponseHandler::HTTPHEADResponseHandler(
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
 		}
 	}
-	
+
 	HTTP::HTTPHandler::HTTPResponseProcessor(std::move(HTTPContext), std::move(HTTPResponseMessage));
 }
 // Implementation of HTTPGETResponseHandler (HTTP GET request method processor)
@@ -132,7 +132,7 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 	std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage = std::move(HTTPClientMessage_);	
 	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
 	std::unordered_map<std::string, std::string> filename_and_filepath_map = std::move(filename_and_filepath_map_);
-	
+
 	// Response message object to user-agent
 	std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage;
 	// Bad Request if the request cannot be parsed/Malformed request from user-agent
@@ -163,7 +163,7 @@ HTTP::HTTPHandler::HTTPGETResponseHandler::HTTPGETResponseHandler(
 			HTTPContext->HTTPLogHolder.log_message = "Serving user with 404 Not Found";
 		}
 	}
-	
+
 	HTTP::HTTPHandler::HTTPResponseProcessor(std::move(HTTPContext), std::move(HTTPResponseMessage));
 }
 
@@ -173,7 +173,7 @@ void HTTP::HTTPHandler::HTTPResponseProcessor(
 
 	std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);	
 	std::unique_ptr<HTTP::HTTPMessage> HTTPResponseMessage = std::move(HTTPResponse_);
-	
+
 	if(HTTPContext->HTTPServerType == HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER){
 		std::unique_ptr<HTTP::HTTPPlaintextResponder> http_responder = 
 			std::make_unique<HTTP::HTTPPlaintextResponder>();
@@ -190,7 +190,7 @@ void HTTP::HTTPHandler::HTTPResponseProcessor(
 	}
 }
 
-// Implementation of HTTPPOSTResponseHandler (HTTP POST and Callback invoke)
+Implementation of HTTPPOSTResponseHandler (HTTP POST and Callback invoke)
 HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 				std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage_,
 				std::unique_ptr<HTTP::HTTPHelpers::HTTPTransactionContext> HTTPContext_,
@@ -203,7 +203,7 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 	std::unique_ptr<HTTPHelpers::HTTPTransactionContext> HTTPContext = std::move(HTTPContext_);
 
 	std::unique_ptr<HTTPMessage> HTTPResponseMessage;
-	
+
 	// Checking if request's target POST endpoint is supported
 	if(post_endpoint_and_callbacks.contains(HTTPClientMessage->GetTargetResource())){
 		// Checking if the Content-Type is supported by the origin-server	
@@ -214,7 +214,7 @@ HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(
 			HTTPResponseMessage = post_endpoint_and_callbacks.at(
 					HTTPClientMessage->GetTargetResource()
 					).second(std::move(HTTPClientMessage), HTTPContext->BasicAuthHandler);
-			
+
 			switch(HTTPResponseMessage->GetResponseCode()){
 				case HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK:
 					HTTPContext->HTTPLogHolder.log_message = "Serving user with 200 OK";

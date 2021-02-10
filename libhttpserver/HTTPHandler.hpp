@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include <tuple>
 #include <unistd.h>
+#include <io/IOBuffer.hpp>
 #include <sys/un.h>
 #include <netinet/in.h>
 #include "HTTPHeaders.hpp"
@@ -62,6 +63,20 @@ namespace HTTP::HTTPHandler{
 		std::string post_accept_type;
 		std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>, HTTP::BasicAuth::BasicAuthHandler*)> callback_fn{nullptr};
 	};
+
+	struct HTTPHandlerContext{
+		std::string path_to_root;
+		HTTP::BasicAuth::BasicAuthHandler* basic_auth_handler{nullptr};
+		std::vector<HTTPHandler::HTTPPostEndpoint> http_post_endpoints;
+		std::string auth_credentials_file;
+		std::string ssl_cert;
+		std::string ssl_private_key;
+		LOG::LogMessage http_log_holder;
+	};
+
+	extern HTTPHandler::HTTPHandlerContext HTTPHandlerContextHolder;
+
+	std::unique_ptr<blueth::io::IOBuffer<char>> HTTPHandlerDispatcher(std::unique_ptr<HTTP::HTTPMessage>);
 
 	class HTTPHandler{
 		private:

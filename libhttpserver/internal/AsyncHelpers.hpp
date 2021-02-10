@@ -1,4 +1,5 @@
 #pragma once
+#include <asm-generic/errno.h>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
@@ -14,6 +15,7 @@
 #include "../HTTPHelpers.hpp"
 #include "../HTTPMessage.hpp"
 #include "../HTTPParser.hpp"
+#include "../HTTPHandler.hpp"
 
 using namespace HTTP;
 using namespace HTTP::HTTP1Parser;
@@ -42,7 +44,8 @@ namespace Async{
 		MessageProcessingState state;
 		ParserState http_message_parse_state;	
 		std::unique_ptr<HTTPHelpers::HTTPTransactionContext> peer_transaction_context;
-		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer;
+		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer_peer;
+		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer_response;
 		std::unique_ptr<HTTP::HTTPMessage> http_message_peer;
 	};
 
@@ -78,16 +81,46 @@ namespace Async{
 		PeerState* peer_state = &GlobalPeerState[socket];
 		peer_state->state = MessageProcessingState::InitialRequestAck;
 		peer_state->peer_transaction_context = std::make_unique<HTTPTransactionContext>();
-		peer_state->io_buffer = std::make_unique<blueth::io::IOBuffer<char>>(INITIAL_IO_BUFFER_SIZE);
+		peer_state->io_buffer_peer = std::make_unique<blueth::io::IOBuffer<char>>(INITIAL_IO_BUFFER_SIZE);
+		peer_state->io_buffer_response = std::make_unique<blueth::io::IOBuffer<char>>(INITIAL_IO_BUFFER_SIZE);
 		peer_state->http_message_peer = std::make_unique<HTTP::HTTPMessage>();
 		peer_state->peer_transaction_context->http_response_code = HTTP_RESPONSE_CODE::BAD_REQUEST;
 		peer_state->peer_transaction_context->peer_fd = socket;
 		peer_state->peer_transaction_context->peer_ip = ::inet_ntoa(peer_addr->sin_addr);
+		peer_state->http_message_parse_state = ParserState::REQUEST_LINE_BEGIN;
 		return WantRead;
 	}
 	
 	inline FDStatus OnPeerReadyRecv(int peer_fd){
-				
+		assert(peer_fd < MAXFDS);			
+		PeerState* peer_state = &GlobalPeerState[peer_fd];
+		if(peer_state->http_message_parse_state == ParserState::PARSING_DONE)
+		{ return WantWrite; }
+		if(peer_state->http_message_parse_state == ParserState::PROTOCOL_ERROR)
+		{ return WantWrite; }
+		constexpr std::size_t TMP_READ_SIZE = 2048;
+		char tmp_reader[TMP_READ_SIZE];
+		int nbytes = ::recv(peer_fd, tmp_reader, sizeof tmp_reader, 0);
+		if(nbytes == 0){
+			return WantNoReadWrite;
+		}else if(nbytes < 0){
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				return WantRead;
+			}else{
+				perror("recv");
+				::exit(EXIT_FAILURE);
+			}
+		}
+		peer_state->io_buffer_peer->appendRawBytes(tmp_reader, nbytes);
+		std::pair<ParserState, std::unique_ptr<HTTP::HTTPMessage>> parser_return = 
+			HTTP::HTTP1Parser::HTTP11Parser(
+				peer_state->io_buffer_peer, peer_state->http_message_parse_state, std::move(peer_state->http_message_peer)
+			);
+		peer_state->http_message_parse_state = parser_return.first;
+		peer_state->http_message_peer = std::move(parser_return.second);
+		if(parser_return.first == ParserState::PARSING_DONE){
+			peer_state->io_buffer_response = std::move(HTTP::HTTPResponder());
+		}
 	}
 	
 	inline FDStatus OnPeerReadySend(int peer_fd){

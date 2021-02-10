@@ -10,57 +10,7 @@
 
 #define StateMachineParser true
 
-HTTP::HTTPMessage::HTTPMessage(
-		const char* raw_read_buffer,
-		HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status
-		){
-	using namespace HTTP::HTTP1Parser;
-#if !StateMachineParser // we always prefer state-machine parser in here(well, we try to)
-	this->_http_parser_status = http_parser_status;
-	std::pair<std::string, std::string> header_and_body_pair = 
-			HTTP::HTTPParser::request_split_header_body(raw_read_buffer);
-	this->_HTTPHeader = std::make_unique<HTTP::HTTPHeaders>(std::move(header_and_body_pair.first));
-
-	std::string request_line = HTTP::HTTPParser::request_line_splitter(raw_read_buffer);
-	std::vector<std::string> request_line_splitted = HTTP::HTTPParser::client_request_line_parser(request_line);
-	if(request_line.size() <= 1){ return; }
-
-	this->_request_type = request_line_splitted.at(0);
-	this->_request_target = request_line_splitted.at(1);
-	this->_http_version = request_line_splitted.at(2);
-	this->_raw_body = std::move(header_and_body_pair.second);
-#else
-	HTTP::HTTP1Parser::HTTPParser parsed_message{raw_read_buffer};
-	HTTP11Parser(std::unique_ptr<blueth::io::IOBuffer<char> >, ParserState, std::unique_ptr<HTTP::HTTPMessage>)
-	parsed_message.ParseBytes();
-	std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> get_parsed_message = 
-			parsed_message.GetParsedMessage();
-	if(get_parsed_message.first){ // checking if our state-machine parser FAILED to parse the HTTP Message(yes, if true)
-		this->_http_parser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST; // If so, we sent a Bad Request	
-	}else{ // if the request HTTP Message is good(parsed by our state-machine), we proceed
-		this->_http_parser_status = std::move(get_parsed_message.second->_http_parser_status);
-		this->_http_status_code = std::move(get_parsed_message.second->_http_status_code);
-		this->_http_version = std::move(get_parsed_message.second->_http_version);
-		this->_raw_body = std::move(get_parsed_message.second->_raw_body);
-		this->_request_target = std::move(get_parsed_message.second->_request_target);
-		this->_request_type = std::move(get_parsed_message.second->_request_type);
-		this->_response_type = std::move(get_parsed_message.second->_response_type);
-		this->_parsed_successfully = get_parsed_message.second->_parsed_successfully;
-		this->_HTTPHeader = get_parsed_message.second->GetHTTPHeader();
-	}
-#endif
-}
-
-bool HTTP::HTTPMessage::ParsedSuccessfully() const noexcept {
-	return this->_parsed_successfully;
-}
-
-void HTTP::HTTPMessage::_SetParserFlag(bool flag_to_set) noexcept {
-	this->_parsed_successfully = flag_to_set;
-}
-
 HTTP::HTTPMessage::HTTPMessage(){
-	this->_http_parser_status = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
 	this->_HTTPHeader = std::make_unique<HTTP::HTTPHeaders>();
 }
 
@@ -76,14 +26,14 @@ const std::unique_ptr<HTTP::HTTPHeaders>& HTTP::HTTPMessage::ConstGetHTTPHeader(
 	return std::move(this->_HTTPHeader);
 }
 
-void HTTP::HTTPMessage::HTTPHeaderBuild(const std::string& ClientHeader, const std::string& ClientBody){
+void HTTP::HTTPMessage::HTTPBuildMessage(const std::string& ClientHeader, const std::string& ClientBody){
 	std::unique_ptr<HTTP::HTTPHeaders> http_header = 
 			std::make_unique<HTTP::HTTPHeaders>(ClientHeader);
 	this->_HTTPHeader = std::move(http_header);
 	this->_raw_body = std::move(ClientBody);
 } 
 
-void HTTP::HTTPMessage::HTTPHeaderBuild(std::string&& ClientHeader, std::string&& ClientBody){
+void HTTP::HTTPMessage::HTTPBuildMessage(std::string&& ClientHeader, std::string&& ClientBody){
 	std::unique_ptr<HTTP::HTTPHeaders> http_header = 
 			std::make_unique<HTTP::HTTPHeaders>(std::move(ClientHeader));
 	this->_HTTPHeader = std::move(http_header);
@@ -135,19 +85,19 @@ void HTTP::HTTPMessage::SetRawBody(const std::string& raw_body) noexcept {
 	this->_raw_body = raw_body;
 }
 
-void HTTP::HTTPMessage::SetResponseType(const std::string& res_type) noexcept {
-	this->_response_type = res_type;
+void HTTP::HTTPMessage::SetResponseType(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_type) noexcept {
+	this->_http_response_code = res_type;
 }
 
-std::string& HTTP::HTTPMessage::GetResponseType() noexcept {
-	return this->_response_type;
+HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPMessage::GetResponseType() noexcept {
+	return this->_http_response_code;
 }
 
 std::string HTTP::HTTPMessage::BuildRawResponseMessage() const noexcept {
 	using HTTP::HTTPConst::HTTP_RESPONSE_CODE;
 	std::string returner;
 	returner += this->_http_version + " ";
-	switch(this->_http_parser_status){
+	switch(this->_http_response_code){
 		case HTTP_RESPONSE_CODE::OK:
 			returner += "200 OK\r\n";
 			break;
@@ -187,11 +137,11 @@ std::string HTTP::HTTPMessage::BuildRawResponseMessage() const noexcept {
 }
 
 HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPMessage::GetResponseCode() const noexcept {
-	return this->_http_parser_status;
+	return this->_http_response_code;
 }
 
 void HTTP::HTTPMessage::SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept {
-	this->_http_parser_status = res_code;
+	this->_http_response_code = res_code;
 }
 
 std::string& HTTP::HTTPMessage::GetRawBody() noexcept {

@@ -22,6 +22,8 @@
 
 #define debug_print(val) std::cout << val << std::endl
 Async::PeerState Async::GlobalPeerState[Async::MAXFDS];
+HTTP::HTTPHandler::HTTPHandlerContext HTTPHandlerContextHolder;
+
 
 using namespace blueth::net::Transport;
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
@@ -47,9 +49,9 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 	Socket plain_socket(server_addr, server_port, server_backlog, Domain::Ipv4, SockType::Stream);
 	plain_socket.make_socket_nonblocking();
 	this->_plain_socket = std::move(plain_socket);
-	this->_http_post_endpoints = std::move(http_post_endpoints);
-	this->_path_to_root = path_to_root;
-	this->_auth_credentials_file = auth_cred_file;
+	HTTPHandlerContextHolder.auth_credentials_file = auth_cred_file;
+	HTTPHandlerContextHolder.path_to_root = path_to_root;
+	HTTPHandlerContextHolder.http_post_endpoints = std::move(http_post_endpoints);
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
@@ -123,8 +125,9 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
 				}
 				Async::PeerState* current_peer_state = &Async::GlobalPeerState[peer_fd];
 				current_peer_state->peer_transaction_context.reset();
-				current_peer_state->http_message.reset();
-				current_peer_state->io_buffer.reset();
+				current_peer_state->http_message_peer.reset();
+				current_peer_state->io_buffer_peer.reset();
+				current_peer_state->io_buffer_response.reset();
 				::close(peer_fd);
 			}else if(::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event) < 0){
 				perror("epoll_ctl EPOLL_CTL_MOD");
@@ -149,7 +152,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
 				Async::PeerState* current_peer_state = &Async::GlobalPeerState[peer_fd];
 				current_peer_state->peer_transaction_context.reset();
 				current_peer_state->http_message_peer.reset();
-				current_peer_state->io_buffer.reset();
+				current_peer_state->io_buffer_peer.reset();
+				current_peer_state->io_buffer_response.reset();
 				::close(peer_fd);
 			}else if(::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event) < 0){
 				perror("epoll_ctl EPOLL_CTL_MOD");

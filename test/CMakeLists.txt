@@ -40,8 +40,8 @@ set(
 	GTEST_SOURCE_FILES
 	./test-HTTPHeaders.cpp
 	./test-HTTPParserRoutine.cpp
-	./test-HTTPMessage.cpp
-	./test-HTTPParser.cpp
+	#./test-HTTPMessage.cpp
+	#./test-HTTPParser.cpp
 	./test-VendorBase64.cpp
 	./test-HTTPBasicAuthHandler.cpp
 	./test-HTTPCommonMessageTemplates.cpp

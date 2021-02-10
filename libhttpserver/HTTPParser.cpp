@@ -44,7 +44,7 @@ namespace Parser = HTTP::HTTP1Parser;
 
 std::pair<HTTP::HTTP1Parser::ParserState, std::unique_ptr<HTTP::HTTPMessage>> 
 HTTP::HTTP1Parser::HTTP11Parser(
-	std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer,
+	const std::unique_ptr<blueth::io::IOBuffer<char>>& io_buffer,
 	ParserState current_state,
 	std::unique_ptr<HTTP::HTTPMessage> http_message
 ){

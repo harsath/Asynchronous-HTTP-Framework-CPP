@@ -52,7 +52,7 @@ namespace HTTP::HTTP1Parser{
 		};
 
 		[[nodiscard]] std::pair<ParserState, std::unique_ptr<HTTP::HTTPMessage>> 
-		HTTP11Parser(std::unique_ptr<blueth::io::IOBuffer<char>>, ParserState, 
+		HTTP11Parser(const std::unique_ptr<blueth::io::IOBuffer<char>>&, ParserState, 
 				std::unique_ptr<HTTP::HTTPMessage>);
 
 		inline std::string state_as_string(const ParserState& state);
