@@ -14,6 +14,7 @@
 #include <sys/epoll.h>
 #include "../HTTPHelpers.hpp"
 #include "../HTTPMessage.hpp"
+#include "../HTTPCommonMessageTemplates.hpp"
 #include "../HTTPParser.hpp"
 #include "../HTTPHandler.hpp"
 
@@ -84,7 +85,6 @@ namespace Async{
 		peer_state->io_buffer_peer = std::make_unique<blueth::io::IOBuffer<char>>(INITIAL_IO_BUFFER_SIZE);
 		peer_state->io_buffer_response = std::make_unique<blueth::io::IOBuffer<char>>(INITIAL_IO_BUFFER_SIZE);
 		peer_state->http_message_peer = std::make_unique<HTTP::HTTPMessage>();
-		peer_state->peer_transaction_context->http_response_code = HTTP_RESPONSE_CODE::BAD_REQUEST;
 		peer_state->peer_transaction_context->peer_fd = socket;
 		peer_state->peer_transaction_context->peer_ip = ::inet_ntoa(peer_addr->sin_addr);
 		peer_state->http_message_parse_state = ParserState::REQUEST_LINE_BEGIN;
@@ -111,6 +111,7 @@ namespace Async{
 				::exit(EXIT_FAILURE);
 			}
 		}
+		// We do incremental parsing as bytes come-in
 		peer_state->io_buffer_peer->appendRawBytes(tmp_reader, nbytes);
 		std::pair<ParserState, std::unique_ptr<HTTP::HTTPMessage>> parser_return = 
 			HTTP::HTTP1Parser::HTTP11Parser(
@@ -119,12 +120,43 @@ namespace Async{
 		peer_state->http_message_parse_state = parser_return.first;
 		peer_state->http_message_peer = std::move(parser_return.second);
 		if(parser_return.first == ParserState::PARSING_DONE){
-			peer_state->io_buffer_response = std::move(HTTP::HTTPResponder());
+			HTTP::HTTPHandler::HTTPHandlerDispatcher(peer_fd);
+			return WantWrite;
+		}else if(parser_return.first == ParserState::PROTOCOL_ERROR){
+			std::string http_bad_response = MessageTemplates::GenerateHTTPMessage(MessageTemplates::BAD_REQUEST, "Invalid request")->BuildRawResponseMessage();
+			peer_state->io_buffer_response->appendRawBytes(
+				http_bad_response.c_str(), http_bad_response.size()
+			);
+			return WantWrite;
+		}else{
+			return WantRead;
 		}
 	}
 	
 	inline FDStatus OnPeerReadySend(int peer_fd){
-
+		assert(peer_fd < MAXFDS);
+		PeerState* peer_state = &GlobalPeerState[peer_fd];
+		if(peer_state->io_buffer_response->getDataSize() == 0){  // !getDataSize()
+			// Nothing to send to this peer, let's close the connection	
+			return WantNoReadWrite;
+		}
+		std::size_t bytes_to_send = peer_state->io_buffer_response->getDataSize();
+		int num_sent = ::send(peer_fd, peer_state->io_buffer_response->getStartOffsetPointer(), bytes_to_send, 0);
+		if(num_sent == -1){
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+				return WantWrite;
+			}else{
+				perror("send");
+				::exit(EXIT_FAILURE);
+			}
+		}
+		if(num_sent < bytes_to_send){
+			peer_state->io_buffer_response->modifyStartOffset(num_sent);
+			return WantWrite;
+		}else{
+			// Everything sent; We can close the connection
+			return WantNoReadWrite;
+		}
 	}
 
 }

@@ -46,6 +46,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 	// this->_TCPEndpoint = std::move(tcp_endpoint_move);
 	// this->_TCPEndpoint.bind_sock();	
 	
+	HTTP::HTTPHelpers::HTTPGenerateRouteMap(HTTPHandlerContextHolder.filename_and_filepath_map, path_to_root);
 	Socket plain_socket(server_addr, server_port, server_backlog, Domain::Ipv4, SockType::Stream);
 	plain_socket.make_socket_nonblocking();
 	this->_plain_socket = std::move(plain_socket);
