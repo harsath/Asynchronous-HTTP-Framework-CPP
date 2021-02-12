@@ -123,7 +123,9 @@ namespace Async{
 			HTTP::HTTPHandler::HTTPHandlerDispatcher(peer_fd);
 			return WantWrite;
 		}else if(parser_return.first == ParserState::PROTOCOL_ERROR){
-			std::string http_bad_response = MessageTemplates::GenerateHTTPMessage(MessageTemplates::BAD_REQUEST, "Invalid request")->BuildRawResponseMessage();
+			std::string http_bad_response = 
+				MessageTemplates::GenerateHTTPMessage(
+					MessageTemplates::BAD_REQUEST, "Invalid request")->BuildRawResponseMessage();
 			peer_state->io_buffer_response->appendRawBytes(
 				http_bad_response.c_str(), http_bad_response.size()
 			);

@@ -1,14 +1,26 @@
 #include <HTTPConstants.hpp>
 #include <HTTPMessage.hpp>
+#include <HTTPParser.hpp>
+#include <cstring>
 #include <gtest/gtest.h>
+#include <io/IOBuffer.hpp>
 #include <memory>
 #include <utility>
 
+using namespace HTTP;
+using namespace HTTP::HTTP1Parser;
 TEST(HTTPMessage_parse_constructor, HTTPMessage){
 	const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/json\r\n\r\nHello, this is text";
 
-	HTTP::HTTPConst::HTTP_RESPONSE_CODE response_code = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
-	std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>(raw_request, response_code);
+	std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer =
+		std::make_unique<blueth::io::IOBuffer<char>>(1024);
+	io_buffer->appendRawBytes(raw_request, std::strlen(raw_request));
+
+	std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>();
+	ParserState parser_state = ParserState::REQUEST_LINE_BEGIN;
+	std::pair<ParserState, std::unique_ptr<HTTPMessage>> http_parser =
+		HTTP11Parser(io_buffer, parser_state, std::move(http_message));
+	http_message = std::move(http_parser.second);
 	ASSERT_EQ(http_message->ConstGetHTTPHeader()->GetHeaderCount(), 3);
 
 	http_message->AddHeader("X-Powered-By", "libhttpserver");
@@ -26,9 +38,9 @@ TEST(HTTPMessage_parse_constructor, HTTPMessage){
 	EXPECT_TRUE(new_body == http_message->GetRawBody());
 	ASSERT_EQ(http_message->RemoveBodyFlush(), -1);
 
-	EXPECT_TRUE(http_message->GetRequestType() == "POST");
-	http_message->SetRequestType("PUT");
-	EXPECT_TRUE(http_message->GetRequestType() == "PUT");
+	EXPECT_TRUE(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::POST);
+	http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::PUT);
+	EXPECT_TRUE(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::PUT);
 
 	EXPECT_TRUE(http_message->GetTargetResource() == "/index.php");
 	http_message->SetTargetResource("/file.php");
@@ -38,22 +50,13 @@ TEST(HTTPMessage_parse_constructor, HTTPMessage){
 	http_message->SetHTTPVersion("HTTP/2.0");
 	EXPECT_TRUE(http_message->GetHTTPVersion() == "HTTP/2.0");
 
-	EXPECT_TRUE(http_message->GetResponseType() == "");	
-	http_message->SetResponseType("Bad Request");
-	EXPECT_TRUE(http_message->GetResponseType() == "Bad Request");	
+	http_message->SetResponseCode(HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);
+	EXPECT_TRUE(http_message->GetResponseCode() == HTTPConst::HTTP_RESPONSE_CODE::BAD_REQUEST);	
 
-	EXPECT_TRUE(
-		http_message->GetResponseCode() == HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK
-		);
 	http_message->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::FORBIDDEN);
 	EXPECT_TRUE(
 		http_message->GetResponseCode() == HTTP::HTTPConst::HTTP_RESPONSE_CODE::FORBIDDEN
 		);
-
-	EXPECT_TRUE(
-		http_message->ParsedSuccessfully()
-		   );
-
 
 	std::string raw_response_build = "HTTP/2.0 403 Forbidden\r\nUser-Agent: curl\r\nContent-Type: text/json\r\nX-Powered-By: libhttpserver\r\n\r\n";
 	EXPECT_TRUE(raw_response_build == http_message->BuildRawResponseMessage());
@@ -64,7 +67,6 @@ TEST(HTTPMessage_build_response_message, HTTPMessage){
 	std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>();
 
 	http_message->SetHTTPVersion("HTTP/1.1");
-	http_message->SetResponseType("OK");
 	http_message->SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK);
 	http_message->AddHeader("Content-Type", "text/html");
 	http_message->AddHeader("X-Powered-By", "libhttpserver");
@@ -77,19 +79,29 @@ TEST(HTTPMessage_build_response_message, HTTPMessage){
 TEST(HTTPMessage_state_machine_parser, HTTPMessage){
 	{
 		const char* request = "GET /index HTTP/\r\nHost: foo.com";
-		HTTP::HTTPConst::HTTP_RESPONSE_CODE response_code = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
-		std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>(request, response_code);
-		EXPECT_FALSE(
-			http_message->ParsedSuccessfully()
-			    );
+		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer =
+			std::make_unique<blueth::io::IOBuffer<char>>(1024);
+		io_buffer->appendRawBytes(request, std::strlen(request));
+
+		std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>();
+		ParserState parser_state = ParserState::REQUEST_LINE_BEGIN;
+		std::pair<ParserState, std::unique_ptr<HTTPMessage>> http_parser =
+			HTTP11Parser(io_buffer, parser_state, std::move(http_message));
+		http_message = std::move(http_parser.second);
+		EXPECT_TRUE((parser_state != ParserState::REQUEST_LINE_BEGIN) && (parser_state != ParserState::PARSING_DONE));
 	}
 
 	{
 		const char* request = "GET /index HTTP/1.1\r\nHost: foo.com\r\n\r\n";
-		HTTP::HTTPConst::HTTP_RESPONSE_CODE response_code = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
-		std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>(request, response_code);
-		EXPECT_TRUE(
-			http_message->ParsedSuccessfully()
-			    );
+		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer =
+			std::make_unique<blueth::io::IOBuffer<char>>(1024);
+		io_buffer->appendRawBytes(request, std::strlen(request));
+
+		std::unique_ptr<HTTP::HTTPMessage> http_message = std::make_unique<HTTP::HTTPMessage>();
+		ParserState parser_state = ParserState::REQUEST_LINE_BEGIN;
+		std::pair<ParserState, std::unique_ptr<HTTPMessage>> http_parser =
+			HTTP11Parser(io_buffer, parser_state, std::move(http_message));
+		http_message = std::move(http_parser.second);
+		EXPECT_TRUE(parser_state == ParserState::PARSING_DONE);
 	}
 }

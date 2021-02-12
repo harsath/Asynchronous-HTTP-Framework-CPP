@@ -52,7 +52,11 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 	this->_plain_socket = std::move(plain_socket);
 	HTTPHandlerContextHolder.auth_credentials_file = auth_cred_file;
 	HTTPHandlerContextHolder.path_to_root = path_to_root;
-	HTTPHandlerContextHolder.http_post_endpoints = std::move(http_post_endpoints);
+	for(auto& post_endpoint : http_post_endpoints){
+		HTTPHandlerContextHolder.post_endpoint_and_callback.insert(
+			{post_endpoint.post_endpoint, {post_endpoint.post_accept_type, post_endpoint.callback_fn}}
+		);
+	}
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {

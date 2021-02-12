@@ -13,29 +13,19 @@
 #include <string>
 #include <variant>
 
-namespace {
-#define str3cmp_macro(ptr, c0, c1, c2) *(ptr+0) == c0 && *(ptr+1) == c1 && *(ptr+2) == c2
-static inline bool str3cmp(const char* ptr, const char* cmp){
-		return str3cmp_macro(ptr,  *(cmp+0),  *(cmp+1),  *(cmp+2));
-}
-#define str4cmp_macro(ptr, c0, c1, c2, c3) *(ptr+0) == c0 && *(ptr+1) == c1 && *(ptr+2) == c2 && *(ptr+3) == c3
-static inline bool str4cmp(const char* ptr, const char* cmp){
-		return str4cmp_macro(ptr,  *(cmp+0),  *(cmp+1),  *(cmp+2),  *(cmp+3));
-}
-}
-
-std::unique_ptr<blueth::io::IOBuffer<char>> HTTP::HTTPHandler::HTTPHandlerDispatcher(int peer_fd){
+void HTTP::HTTPHandler::HTTPHandlerDispatcher(int peer_fd){
 	using namespace HTTP::HTTPHelpers;
+	using namespace HTTP;
 	Async::PeerState* peer_state = &Async::GlobalPeerState[peer_fd];
-	HTTP::HTTPMessage* http_request_message = peer_state->http_message_peer.get();
-	if(str3cmp("GET", http_request_message->GetRequestType().c_str())){
-		HTTP::HTTPHandler::HTTPGetResponseHandler(peer_fd);
-	}else if(str4cmp("POST", http_request_message->GetRequestType().c_str())){
-		HTTP::HTTPHandler::HTTPPostResponseHandler(peer_fd);
-	}else if(str4cmp("HEAD", http_request_message->GetRequestType().c_str())){
-		HTTP::HTTPHandler::HTTPHeadResponseHandler(peer_fd);
+	HTTPMessage* http_request_message = peer_state->http_message_peer.get();
+	if(http_request_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::GET){
+		HTTPHandler::HTTPGetResponseHandler(peer_fd);
+	}else if(http_request_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::POST){
+		HTTPHandler::HTTPPostResponseHandler(peer_fd);
+	}else if(http_request_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::HEAD){
+		HTTPHandler::HTTPHeadResponseHandler(peer_fd);
 	}else{
-
+		HTTPHandler::HTTPMethodNotAllowedHandler(peer_fd);	
 	}
 }
 
@@ -44,7 +34,7 @@ void HTTP::HTTPHandler::HTTPHeadResponseHandler(int peer_fd){
 	using namespace HTTP;
 	Async::PeerState* peer_state = &Async::GlobalPeerState[peer_fd];
 	// Response message object to user-agent
-	std::string http_peer_response = MessageTemplates::GenerateHTTPMessage(MessageTemplates::OK)->BuildRawResponseMessage();
+	auto&& http_peer_response = MessageTemplates::GenerateHTTPMessage(MessageTemplates::OK)->BuildRawResponseMessage();
 	peer_state->io_buffer_response->appendRawBytes(
 		http_peer_response.c_str(), http_peer_response.size()			
 	);
@@ -54,7 +44,7 @@ void HTTP::HTTPHandler::HTTPMethodNotAllowedHandler(int peer_fd){
 	using namespace HTTP;
 	Async::PeerState* peer_state = &Async::GlobalPeerState[peer_fd];
 	// Response with Bad Request
-	std::string http_peer_response = 
+	auto&& http_peer_response = 
 		MessageTemplates::GenerateHTTPMessage(MessageTemplates::BAD_REQUEST, "Invalid Request")->BuildRawResponseMessage();
 	peer_state->io_buffer_response->appendRawBytes(
 		http_peer_response.c_str(), http_peer_response.size()
@@ -64,19 +54,19 @@ void HTTP::HTTPHandler::HTTPMethodNotAllowedHandler(int peer_fd){
 void HTTP::HTTPHandler::HTTPGetResponseHandler(int peer_fd){
 	using namespace HTTP;
 	Async::PeerState* peer_state = &Async::GlobalPeerState[peer_fd];
-	HTTP::HTTPMessage* http_client_message = peer_state->http_message_peer.get();
+	HTTPMessage* http_client_message = peer_state->http_message_peer.get();
 
 	if(HTTPHandlerContextHolder.filename_and_filepath_map.contains(http_client_message->GetTargetResource())){
-		std::string response_body = HTTPHelpers::read_file(
+		auto&& response_body = HTTPHelpers::read_file(
 				HTTPHandlerContextHolder.filename_and_filepath_map.at(http_client_message->GetTargetResource())
 		);
-		std::string http_peer_response = 
+		auto&& http_peer_response = 
 			MessageTemplates::GenerateHTTPMessage(MessageTemplates::OK, std::move(response_body))->BuildRawResponseMessage();
 		peer_state->io_buffer_response->appendRawBytes(
 			http_peer_response.c_str(), http_peer_response.size()
 		);
 	}else{
-		std::string http_peer_response = 
+		auto&& http_peer_response = 
 			MessageTemplates::GenerateHTTPMessage(MessageTemplates::NOT_FOUND, "Requested file not found")->BuildRawResponseMessage();
 		peer_state->io_buffer_response->appendRawBytes(
 			http_peer_response.c_str(), http_peer_response.size()
@@ -84,6 +74,48 @@ void HTTP::HTTPHandler::HTTPGetResponseHandler(int peer_fd){
 	}
 }
 
+void HTTP::HTTPHandler::HTTPPostResponseHandler(int peer_fd){
+	using namespace HTTP;		
+	Async::PeerState* peer_state = &Async::GlobalPeerState[peer_fd];
+	HTTPMessage* http_client_message = peer_state->http_message_peer.get();
+	std::string target_resource = http_client_message->GetTargetResource();
+	if(HTTPHandlerContextHolder.post_endpoint_and_callback.contains(target_resource)){
+		auto&& content_type_send_by_client = 
+			http_client_message->ConstGetHTTPHeader()->GetHeaderValue("Content-Type").value();
+		auto&& content_type_supported = 
+			HTTPHandlerContextHolder.post_endpoint_and_callback.at(target_resource).first;
+		auto&& endpoint_callback_fn =
+			HTTPHandlerContextHolder.post_endpoint_and_callback.at(target_resource).second;
+		BasicAuth::BasicAuthHandler* basic_auth_handler =
+			HTTPHandlerContextHolder.basic_auth_handler;
+		if(content_type_send_by_client == content_type_supported){
+			std::unique_ptr<HTTPMessage> callback_response_message =
+				endpoint_callback_fn(http_client_message, basic_auth_handler);
+
+			auto&& http_peer_response = callback_response_message->BuildRawResponseMessage();
+			peer_state->io_buffer_response->appendRawBytes(
+				http_peer_response.c_str(), http_peer_response.size()
+			);
+		}else{
+			// User-Agent sent a unsupported content-type to a callback endpoint
+			auto&& message_body = "This endpoint does not accept that Content-Type";
+			auto&& http_peer_response =
+				MessageTemplates::GenerateHTTPMessage(
+					MessageTemplates::UNSUPPORTED_MEDIA_TYPE, std::move(message_body))->BuildRawResponseMessage();
+			peer_state->io_buffer_response->appendRawBytes(
+				http_peer_response.c_str(), http_peer_response.size()
+			);
+		}
+	}else{
+		auto&& message_body = "Method not allowed, No such endpoints";
+		auto&& http_peer_response =
+			MessageTemplates::GenerateHTTPMessage(
+				MessageTemplates::METHOD_NOT_ALLOWED, std::move(message_body))->BuildRawResponseMessage();
+		peer_state->io_buffer_response->appendRawBytes(
+			http_peer_response.c_str(), http_peer_response.size()
+		);
+	}
+}
 
 // //Implementation of HTTPPOSTResponseHandler (HTTP POST and Callback invoke)
 // HTTP::HTTPHandler::HTTPPOSTResponseHandler::HTTPPOSTResponseHandler(

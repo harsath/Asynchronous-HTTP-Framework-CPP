@@ -8,5 +8,9 @@ namespace HTTP::HTTPConst{
 		MOVED_PERMANENTLY=301, UNAUTHORIZED=401
 	};
 
+	enum class HTTP_REQUEST_TYPE {
+		GET=1, POST, HEAD, PUT, UNSUPPORTED
+	};
+
 	enum class HTTP_SERVER_TYPE : std::uint8_t { PLAINTEXT_SERVER = 0, SSL_SERVER };
 }

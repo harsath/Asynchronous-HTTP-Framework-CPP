@@ -7,7 +7,18 @@
 #include <optional>
 #include <string>
 
-#define DEBUG true
+namespace {
+#define str3cmp_macro(ptr, c0, c1, c2) *(ptr+0) == c0 && *(ptr+1) == c1 && *(ptr+2) == c2
+static inline bool str3cmp(const char* ptr, const char* cmp){
+		return str3cmp_macro(ptr,  *(cmp+0),  *(cmp+1),  *(cmp+2));
+}
+#define str4cmp_macro(ptr, c0, c1, c2, c3) *(ptr+0) == c0 && *(ptr+1) == c1 && *(ptr+2) == c2 && *(ptr+3) == c3
+static inline bool str4cmp(const char* ptr, const char* cmp){
+		return str4cmp_macro(ptr,  *(cmp+0),  *(cmp+1),  *(cmp+2),  *(cmp+3));
+}
+}
+
+#define DEBUG false
 #if DEBUG
 #define Debug(...) __VA_ARGS__
 #else
@@ -45,13 +56,14 @@ namespace Parser = HTTP::HTTP1Parser;
 std::pair<HTTP::HTTP1Parser::ParserState, std::unique_ptr<HTTP::HTTPMessage>> 
 HTTP::HTTP1Parser::HTTP11Parser(
 	const std::unique_ptr<blueth::io::IOBuffer<char>>& io_buffer,
-	ParserState current_state,
+	ParserState& current_state,
 	std::unique_ptr<HTTP::HTTPMessage> http_message
 ){
 	using namespace Parser;
 
 	std::string tmp_header_name;
 	std::string tmp_header_value;
+	std::string tmp_request_type;
 
 	const char* start_input = io_buffer->getStartOffsetPointer();
 	const char* end_input = io_buffer->getEndOffsetPointer();	
@@ -64,7 +76,8 @@ HTTP::HTTP1Parser::HTTP11Parser(
 				if(is_token(*start_input)){
 					// Let's begin parsing Request-Method
 					current_state = ParserState::REQUEST_METHOD;
-					http_message->GetRequestType().push_back(*start_input);
+					tmp_request_type.push_back(*start_input);
+					//http_message->GetRequestType().push_back(*start_input);
 					Debug(std::cout << *start_input << std::endl;)
 					Debug(std::cout << state_as_string(ParserState::REQUEST_LINE_BEGIN) << std::endl;)
 					increment_byte();
@@ -77,6 +90,14 @@ HTTP::HTTP1Parser::HTTP11Parser(
 		case ParserState::REQUEST_METHOD:
 			{
 				if(*start_input == static_cast<char>(LexConst::SP)){
+					if(HTTP::HTTPHelpers::case_insensitive_string_cmp("GET", tmp_request_type.c_str()))
+					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::GET); }
+					else if(HTTP::HTTPHelpers::case_insensitive_string_cmp("HEAD", tmp_request_type.c_str()))
+					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::HEAD); }
+					else if(HTTP::HTTPHelpers::case_insensitive_string_cmp("POST", tmp_request_type.c_str()))
+					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::POST); }
+					else
+					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::UNSUPPORTED); }
 					// We parsed Request-Method, Let's begin parsing Request-URI
 					current_state = ParserState::REQUEST_RESOURCE_BEGIN;
 					Debug(std::cout << *start_input << std::endl;)
@@ -84,7 +105,8 @@ HTTP::HTTP1Parser::HTTP11Parser(
 					increment_byte();
 				}else if(is_token(*start_input)){
 					// No state transition
-					http_message->GetRequestType().push_back(*start_input);
+					tmp_request_type.push_back(*start_input);
+					//http_message->GetRequestType().push_back(*start_input);
 					Debug(std::cout << *start_input << std::endl;)
 					Debug(std::cout << state_as_string(ParserState::REQUEST_METHOD) << std::endl;)
 					increment_byte();
@@ -346,21 +368,18 @@ HTTP::HTTP1Parser::HTTP11Parser(
 			{
 				if(*start_input == static_cast<char>(LexConst::LF)){
 					Debug(std::cout << state_as_string(ParserState::HEADER_END_LF) << std::endl;)
-					if(HTTPHelpers::case_insensitive_string_cmp(
-								http_message->GetRequestType(),
-								"GET")){
+					if(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::GET){
 						Debug(std::cout << "GET Request Parsing done" << std::endl;)
 						current_state = ParserState::PARSING_DONE;
-					}else if(HTTPHelpers::case_insensitive_string_cmp(
-								http_message->GetRequestType(),
-								"POST")){ 
+					}else if(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::POST){ 
+						Debug(std::cout << "POST Request is parsing" << std::endl;)
 						increment_byte();
 						current_state = ParserState::CONTENT_BEGIN;
-					}else if(HTTPHelpers::case_insensitive_string_cmp(
-								http_message->GetRequestType(),
-								"HEAD")){
+					}else if(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::HEAD){
 						Debug(std::cout << "HEAD Request Parsing done" << std::endl;)
 						current_state = ParserState::PARSING_DONE;
+					}else{
+						current_state = ParserState::PROTOCOL_ERROR;
 					}
 				}else{ 
 					Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
@@ -410,10 +429,11 @@ HTTP::HTTP1Parser::HTTP11Parser(
 				is_protocol_fail = true;
 			}
 			break;
-		default:
-			break;
+		case ParserState::PARSING_DONE:
+			goto FINISH;
 		}
 	}
+FINISH:
 	return {current_state, std::move(http_message)};
 }
 

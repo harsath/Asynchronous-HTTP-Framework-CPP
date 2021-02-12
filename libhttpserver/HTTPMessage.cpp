@@ -53,11 +53,11 @@ int HTTP::HTTPMessage::RemoveBodyFlush() noexcept {
 	else{ this->_raw_body = ""; return 0; }
 }
 
-void HTTP::HTTPMessage::SetRequestType(const std::string &req_type) noexcept {
+void HTTP::HTTPMessage::SetRequestType(HTTP::HTTPConst::HTTP_REQUEST_TYPE req_type) noexcept {
 	this->_request_type = req_type;
 }
 
-std::string& HTTP::HTTPMessage::GetRequestType() noexcept {
+HTTP::HTTPConst::HTTP_REQUEST_TYPE HTTP::HTTPMessage::GetRequestType() noexcept {
 	return this->_request_type;
 } 
 
@@ -85,11 +85,11 @@ void HTTP::HTTPMessage::SetRawBody(const std::string& raw_body) noexcept {
 	this->_raw_body = raw_body;
 }
 
-void HTTP::HTTPMessage::SetResponseType(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_type) noexcept {
+void HTTP::HTTPMessage::SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_type) noexcept {
 	this->_http_response_code = res_type;
 }
 
-HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPMessage::GetResponseType() noexcept {
+HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPMessage::GetResponseCode() const noexcept {
 	return this->_http_response_code;
 }
 
@@ -134,14 +134,6 @@ std::string HTTP::HTTPMessage::BuildRawResponseMessage() const noexcept {
 	}
 	returner += "\r\n" + this->_raw_body;
 	return returner;
-}
-
-HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTP::HTTPMessage::GetResponseCode() const noexcept {
-	return this->_http_response_code;
-}
-
-void HTTP::HTTPMessage::SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept {
-	this->_http_response_code = res_code;
 }
 
 std::string& HTTP::HTTPMessage::GetRawBody() noexcept {

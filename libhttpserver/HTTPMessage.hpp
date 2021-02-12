@@ -14,7 +14,7 @@ namespace HTTP{
 		private:
 			std::unique_ptr<HTTPHeaders> _HTTPHeader{nullptr};
 			std::string _raw_body;
-			std::string _request_type;
+			HTTPConst::HTTP_REQUEST_TYPE _request_type;
 			std::string _request_target;
 			std::string _http_version;
 			std::string _http_status_code;
@@ -35,8 +35,8 @@ namespace HTTP{
 			// Remove the body completly from the HTTP Message
 			int RemoveBodyFlush() noexcept;
 			
-			void SetRequestType(const std::string& req_type) noexcept;
-			std::string& GetRequestType() noexcept;
+			void SetRequestType(HTTPConst::HTTP_REQUEST_TYPE req_type) noexcept;
+			HTTPConst::HTTP_REQUEST_TYPE GetRequestType() noexcept;
 
 			void SetTargetResource(const std::string& req_resource) noexcept;
 			std::string& GetTargetResource() noexcept;
@@ -51,9 +51,6 @@ namespace HTTP{
 			void SetHTTPHeader(std::unique_ptr<HTTPHeaders> headers) noexcept;
 			const std::unique_ptr<HTTPHeaders>& ConstGetHTTPHeader() const noexcept;
 			[[nodiscard]] std::unique_ptr<HTTPHeaders> GetHTTPHeader() noexcept;
-
-			void SetResponseType(HTTPConst::HTTP_RESPONSE_CODE res_type) noexcept;
-			HTTPConst::HTTP_RESPONSE_CODE GetResponseType() noexcept;
 
 			HTTP::HTTPConst::HTTP_RESPONSE_CODE GetResponseCode() const noexcept;
 			void SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept;

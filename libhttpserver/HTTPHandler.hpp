@@ -38,25 +38,32 @@
 
 
 namespace HTTP::HTTPHandler{
+	using namespace HTTP;
 	struct HTTPPostEndpoint{
 		std::string post_endpoint;
 		std::string post_accept_type;
-		std::function<std::unique_ptr<HTTP::HTTPMessage>(std::unique_ptr<HTTP::HTTPMessage>, HTTP::BasicAuth::BasicAuthHandler*)> callback_fn{nullptr};
+		std::function<std::unique_ptr<HTTPMessage>(HTTPMessage*, BasicAuth::BasicAuthHandler*)> callback_fn{nullptr};
 	};
 
 	struct HTTPHandlerContext{
 		std::string path_to_root;
 		std::unordered_map<std::string, std::string> filename_and_filepath_map;
-		HTTP::BasicAuth::BasicAuthHandler* basic_auth_handler{nullptr};
-		std::vector<HTTPHandler::HTTPPostEndpoint> http_post_endpoints;
+		BasicAuth::BasicAuthHandler* basic_auth_handler{nullptr};
+		std::unordered_map<
+			std::string, 
+			std::pair<
+				std::string,
+				std::function<std::unique_ptr<HTTPMessage>(HTTPMessage*, BasicAuth::BasicAuthHandler*)>
+				>
+			> post_endpoint_and_callback;
 		std::string auth_credentials_file;
 		std::string ssl_cert;
 		std::string ssl_private_key;
-		LOG::LogMessage http_log_holder;
+		LOG::LogMessage* http_log_holder{nullptr};
 	};
 	extern HTTPHandler::HTTPHandlerContext HTTPHandlerContextHolder;
 
-	std::unique_ptr<blueth::io::IOBuffer<char>> HTTPHandlerDispatcher(int peer_fd);
+	void HTTPHandlerDispatcher(int peer_fd);
 
 	void HTTPPostResponseHandler(int peer_fd);
 	void HTTPHeadResponseHandler(int peer_fd);
