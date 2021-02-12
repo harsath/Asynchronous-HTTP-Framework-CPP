@@ -55,11 +55,11 @@ namespace HTTP::HTTP1Parser{
 		HTTP11Parser(const std::unique_ptr<blueth::io::IOBuffer<char>>&, ParserState&,
 				std::unique_ptr<HTTP::HTTPMessage>);
 
-		inline std::string state_as_string(const ParserState& state);
-		inline bool is_char(char value);
-		inline bool is_control(char value);
-		inline bool is_separator(char value);
-		inline bool is_token(char value);
-		inline bool is_text(char value);
+		std::string state_as_string(const ParserState& state);
+		bool is_char(char value);
+		bool is_control(char value);
+		bool is_separator(char value);
+		bool is_token(char value);
+		bool is_text(char value);
 
 } // end namespace HTTP::HTTP1Parser

@@ -18,7 +18,7 @@ static inline bool str4cmp(const char* ptr, const char* cmp){
 }
 }
 
-#define DEBUG false
+#define DEBUG true
 #if DEBUG
 #define Debug(...) __VA_ARGS__
 #else
@@ -317,7 +317,6 @@ HTTP::HTTP1Parser::HTTP11Parser(
 					Debug(std::cout << "CR" << std::endl;)
 					Debug(std::cout << state_as_string(ParserState::HEADER_VALUE_BEGIN) << std::endl;)
 					current_state = ParserState::HEADER_END_LF;
-					increment_byte();
 				}else{
 					Debug(std::cout << state_as_string(ParserState::PROTOCOL_ERROR) << std::endl;)
 					current_state = ParserState::PROTOCOL_ERROR;
@@ -373,7 +372,6 @@ HTTP::HTTP1Parser::HTTP11Parser(
 						current_state = ParserState::PARSING_DONE;
 					}else if(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::POST){ 
 						Debug(std::cout << "POST Request is parsing" << std::endl;)
-						increment_byte();
 						current_state = ParserState::CONTENT_BEGIN;
 					}else if(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::HEAD){
 						Debug(std::cout << "HEAD Request Parsing done" << std::endl;)
@@ -391,12 +389,13 @@ HTTP::HTTP1Parser::HTTP11Parser(
 			{
 				// I might want to check for the Content-Length, keeping these seperate for future things like Chunk Sizes
 				if(*start_input == '\0'){
-					current_state = ParserState::CONTENT_END;	
+					current_state = ParserState::PROTOCOL_ERROR;
 				}else{
 					http_message->GetRawBody().push_back(*start_input);
 					current_state = ParserState::CONTENT;
-					increment_byte();
 					Debug(std::cout << state_as_string(ParserState::CONTENT_BEGIN) << std::endl;)
+					Debug(std::cout << "Value: " << *start_input << std::endl;)
+					increment_byte();
 				}
 				break;
 			}
