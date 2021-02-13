@@ -71,7 +71,7 @@ std::optional<std::string> HTTP::HTTPHeaders::GetHeaderValue(const std::string &
 	if(this->_HTTPHeaders.contains(name)){
 		return this->_HTTPHeaders.at(name);
 	}else{
-		return {};
+		return std::nullopt;
 	}
 }
 

@@ -6,6 +6,17 @@
 #include "HTTPMessage.hpp"
 #include "HTTPParser.hpp"
 
+namespace {
+	std::size_t get_num_from_char_(const std::string& val){
+		std::size_t returner = 0;
+		for(std::size_t i{0}; i < val.size(); i++){
+			returner *= 10;
+			returner += val.at(i)-'0';
+		}
+		return returner;
+	}
+}
+
 using namespace HTTP;
 TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 	{
@@ -136,9 +147,7 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 			HTTP1Parser::HTTP11Parser(io_buffer, parser_state, std::move(parsed_message));
 		parsed_message = std::move(http_parser.second);
 
-		EXPECT_TRUE(http_parser.first == HTTP1Parser::ParserState::PARSING_DONE);
-		std::cout << "OUT: " << HTTP1Parser::state_as_string(http_parser.first) << std::endl;
-		exit(1);
+		EXPECT_TRUE(http_parser.first == HTTP1Parser::ParserState::PROTOCOL_ERROR);
 		EXPECT_TRUE(parsed_message->GetTargetResource() == "/index.php");
 		EXPECT_TRUE(parsed_message->GetRawBody() == "");
 		EXPECT_TRUE(parsed_message->ConstGetHTTPHeader()->GetHeaderValue("Host") == "www.example.com");
@@ -146,7 +155,9 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 	}
 
 	{
-		const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/json\r\n\r\none=value_one&two=value_two";
+		const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\n"
+			"Host: www.example.com\r\nContent-Type: text/json\r\nContent-Length: 27"
+			"\r\n\r\none=value_one&two=value_two";
 		const char* request_body = "one=value_one&two=value_two";
 		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer =
 			std::make_unique<blueth::io::IOBuffer<char>>(1024);
@@ -156,13 +167,13 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 		std::pair<HTTP1Parser::ParserState, std::unique_ptr<HTTPMessage>> http_parser = 
 			HTTP1Parser::HTTP11Parser(io_buffer, parser_state, std::move(parsed_message));
 		parsed_message = std::move(http_parser.second);
-
 		EXPECT_TRUE(http_parser.first == HTTP1Parser::ParserState::PARSING_DONE);
 		ASSERT_EQ(parsed_message->GetRawBody(), request_body);
 	}
 
 	{
-		const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com\r\nContent-Type: text/json\r\n\r\n{\"one\":1234, \"two\":\"foo value\"}";
+		const char* raw_request = "POST /index.php HTTP/1.1\r\nUser-Agent: curl\r\nHost: www.example.com"
+			"\r\nContent-Type: text/json\r\nContent-Length: 31\r\n\r\n{\"one\":1234, \"two\":\"foo value\"}";
 		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer =
 			std::make_unique<blueth::io::IOBuffer<char>>(1024);
 		io_buffer->appendRawBytes(raw_request, std::strlen(raw_request));
@@ -172,7 +183,9 @@ TEST(HTTPParser_basic_get_request_parser, HTTP11Parser){
 			HTTP1Parser::HTTP11Parser(io_buffer, parser_state, std::move(parsed_message));
 		parsed_message = std::move(http_parser.second);
 		EXPECT_TRUE(http_parser.first == HTTP1Parser::ParserState::PARSING_DONE);
-		ASSERT_EQ(parsed_message->GetRawBody(), "{\"one\":1234, \"two\":\"foo value\"}");
+		std::string request_body = "{\"one\":1234, \"two\":\"foo value\"}";
+		ASSERT_EQ(parsed_message->GetRawBody(), request_body);
 		ASSERT_EQ(parsed_message->GetRequestType(), HTTPConst::HTTP_REQUEST_TYPE::POST);
+		ASSERT_EQ(::get_num_from_char_(parsed_message->GetHeaderValue("Content-Length").value()), request_body.size());
 	}
 }

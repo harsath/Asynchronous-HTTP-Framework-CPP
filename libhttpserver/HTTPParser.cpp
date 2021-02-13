@@ -18,7 +18,7 @@ static inline bool str4cmp(const char* ptr, const char* cmp){
 }
 }
 
-#define DEBUG true
+#define DEBUG false
 #if DEBUG
 #define Debug(...) __VA_ARGS__
 #else
@@ -66,7 +66,7 @@ HTTP::HTTP1Parser::HTTP11Parser(
 	std::string tmp_request_type;
 
 	const char* start_input = io_buffer->getStartOffsetPointer();
-	const char* end_input = io_buffer->getEndOffsetPointer();	
+	const char* end_input = io_buffer->getEndOffsetPointer();
 	bool is_protocol_fail{false};
 	auto increment_byte = [&start_input](void) -> void { start_input++; };
 	while(start_input != end_input && (!is_protocol_fail)){
@@ -90,11 +90,11 @@ HTTP::HTTP1Parser::HTTP11Parser(
 		case ParserState::REQUEST_METHOD:
 			{
 				if(*start_input == static_cast<char>(LexConst::SP)){
-					if(HTTP::HTTPHelpers::case_insensitive_string_cmp("GET", tmp_request_type.c_str()))
+					if(str3cmp("GET", tmp_request_type.c_str()))
 					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::GET); }
-					else if(HTTP::HTTPHelpers::case_insensitive_string_cmp("HEAD", tmp_request_type.c_str()))
+					else if(str4cmp("HEAD", tmp_request_type.c_str()))
 					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::HEAD); }
-					else if(HTTP::HTTPHelpers::case_insensitive_string_cmp("POST", tmp_request_type.c_str()))
+					else if(str4cmp("POST", tmp_request_type.c_str()))
 					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::POST); }
 					else
 					{ http_message->SetRequestType(HTTPConst::HTTP_REQUEST_TYPE::UNSUPPORTED); }
@@ -372,7 +372,10 @@ HTTP::HTTP1Parser::HTTP11Parser(
 						current_state = ParserState::PARSING_DONE;
 					}else if(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::POST){ 
 						Debug(std::cout << "POST Request is parsing" << std::endl;)
-						current_state = ParserState::CONTENT_BEGIN;
+						if(!http_message->GetHeaderValue("Content-Length").has_value())
+						{ current_state = ParserState::PROTOCOL_ERROR; break; }
+						current_state = ParserState::CONTENT;
+						increment_byte();
 					}else if(http_message->GetRequestType() == HTTPConst::HTTP_REQUEST_TYPE::HEAD){
 						Debug(std::cout << "HEAD Request Parsing done" << std::endl;)
 						current_state = ParserState::PARSING_DONE;
@@ -385,40 +388,14 @@ HTTP::HTTP1Parser::HTTP11Parser(
 				}
 				break;
 			}
-		case ParserState::CONTENT_BEGIN:
-			{
-				// I might want to check for the Content-Length, keeping these seperate for future things like Chunk Sizes
-				if(*start_input == '\0'){
-					current_state = ParserState::PROTOCOL_ERROR;
-				}else{
-					http_message->GetRawBody().push_back(*start_input);
-					current_state = ParserState::CONTENT;
-					Debug(std::cout << state_as_string(ParserState::CONTENT_BEGIN) << std::endl;)
-					Debug(std::cout << "Value: " << *start_input << std::endl;)
-					increment_byte();
-				}
-				break;
-			}
 		case ParserState::CONTENT:
 			{
-				if(*start_input != '\0'){
-					http_message->GetRawBody().push_back(*start_input);
-					current_state = ParserState::CONTENT;
-					Debug(std::cout << state_as_string(ParserState::CONTENT) << std::endl;)
-					increment_byte();
-				}else{
-					current_state = ParserState::CONTENT_END;
+				if((start_input+1) == end_input){
+					current_state = ParserState::PARSING_DONE; 
 				}
-				break;
-			}
-		case ParserState::CONTENT_END:
-			{
-				if(*start_input == '\0'){
-					Debug(std::cout << state_as_string(ParserState::CONTENT_END) << std::endl;)
-					current_state = ParserState::PARSING_DONE;
-				}else{
-					current_state = ParserState::PROTOCOL_ERROR;
-				}
+				http_message->GetRawBody().push_back(*start_input);
+				Debug(std::cout << state_as_string(ParserState::CONTENT) << std::endl;)
+				increment_byte();
 				break;
 			}
 		case ParserState::PROTOCOL_ERROR:
@@ -468,7 +445,6 @@ std::string Parser::state_as_string(const ParserState &state){
 			return "header-name-begin";
 		case ParserState::HEADER_NAME:
 			return "header-name";
-			return "header-colon";
 		case ParserState::HEADER_VALUE_BEGIN:
 			return "header-value-begin";
 		case ParserState::HEADER_VALUE:
@@ -479,12 +455,8 @@ std::string Parser::state_as_string(const ParserState &state){
 			return "header-value-end";
 		case ParserState::HEADER_END_LF:
 			return "header-end-lf";
-		case ParserState::CONTENT_BEGIN:
-			return "content-begin";
 		case ParserState::CONTENT:
 			return "content";
-		case ParserState::CONTENT_END:
-			return "content-end";
 		default:
 			return "Error - No such parser state";
 	}

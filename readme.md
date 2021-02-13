@@ -26,8 +26,6 @@ Now, run the server with `./server`
 #### Note: The examples in `./examples` are NOT updated. I will update them when I find time ASAP. Checkout main.cpp and main-plain.cpp for updated code for now.
 Checkout the `./examples` dir for more info on using Callbacks and REST API examples.
 
-You can checkout the libHTTPserver's architecture in `HTTP-Server-Arch.jpg`
-
 5. You can now, test the SSL/HTTPS server through cURL or openssl's s_client
 ```
 $ curl --insecure -u 'username:password$324'-v -H "Content-Type: application/json" -d '{"value_one":123,"value_two":"Hello"}' https://127.0.0.1:9876/poster
@@ -63,9 +61,3 @@ $ curl --insecure -u 'username:password$324'-v -H "Content-Type: application/jso
 ............
 ............
 ```
-
-![image](https://github.com/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231/blob/master/HTTP-Server-Arch.jpg)
-
-
-
-sidenode: sapi01 is my another Git account

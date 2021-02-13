@@ -24,7 +24,7 @@ namespace HTTP::HTTP1Parser{
 			REQUEST_LINE_LF,
 			
 			// Message-Headers
-			HEADER_NAME_BEGIN = 150,
+			HEADER_NAME_BEGIN,
 			HEADER_NAME,
 			HEADER_VALUE_BEGIN,
 			HEADER_VALUE,
@@ -33,16 +33,14 @@ namespace HTTP::HTTP1Parser{
 			HEADER_END_LF,
 
 			// Message-Content
-			CONTENT_BEGIN = 200,
 			CONTENT,
-			CONTENT_END,
 
 			// Final state after processed
 			PARSING_DONE
 		};
 
 		enum class MessageParts : std::uint8_t {
-			REQUEST_LINE = 0,
+			REQUEST_LINE = 1,
 			HEADERS,
 			Body
 		};
