@@ -20,8 +20,6 @@ set(
 	./HTTPConstants.hpp
 	./HTTPLogHelpers.hpp
 	./HTTPParserRoutine.hpp
-	./HTTPResponder.hpp
-	./HTTPResponder.cpp
 	./HTTPSSLHelpers.hpp
 	./HTTPParser.cpp
 	./HTTPParser.hpp

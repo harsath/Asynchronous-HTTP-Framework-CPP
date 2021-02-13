@@ -1,7 +1,6 @@
 #include "HTTPAcceptor.hpp"
 #include "HTTPBasicAuthHandler.hpp"
 #include "HTTPLogHelpers.hpp"
-#include "HTTPResponder.hpp"
 #include "HTTPSSLHelpers.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
@@ -22,7 +21,7 @@
 
 #define debug_print(val) std::cout << val << std::endl
 Async::PeerState Async::GlobalPeerState[Async::MAXFDS];
-HTTP::HTTPHandler::HTTPHandlerContext HTTPHandlerContextHolder;
+HTTP::HTTPHandler::HTTPHandlerContext HTTP::HTTPHandler::HTTPHandlerContextHolder;
 
 
 using namespace blueth::net::Transport;
@@ -36,6 +35,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 		const std::string& ssl_private_key,
 		const std::string& auth_cred_file	
 		) noexcept {
+	using namespace HTTP;
 
 	// TCPEndpoint tcp_endpoint_move(
 	// 		std::move(server_addr), std::move(server_port), server_backlog,
@@ -46,14 +46,15 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 	// this->_TCPEndpoint = std::move(tcp_endpoint_move);
 	// this->_TCPEndpoint.bind_sock();	
 	
-	HTTP::HTTPHelpers::HTTPGenerateRouteMap(HTTPHandlerContextHolder.filename_and_filepath_map, path_to_root);
+	HTTPHelpers::HTTPGenerateRouteMap(HTTPHandler::HTTPHandlerContextHolder.filename_and_filepath_map, path_to_root);
 	Socket plain_socket(server_addr, server_port, server_backlog, Domain::Ipv4, SockType::Stream);
 	plain_socket.make_socket_nonblocking();
-	this->_plain_socket = std::move(plain_socket);
-	HTTPHandlerContextHolder.auth_credentials_file = auth_cred_file;
-	HTTPHandlerContextHolder.path_to_root = path_to_root;
+	_plain_socket = std::move(plain_socket);
+	_plain_socket.bind_sock();
+	HTTPHandler::HTTPHandlerContextHolder.auth_credentials_file = auth_cred_file;
+	HTTPHandler::HTTPHandlerContextHolder.path_to_root = path_to_root;
 	for(auto& post_endpoint : http_post_endpoints){
-		HTTPHandlerContextHolder.post_endpoint_and_callback.insert(
+		HTTPHandler::HTTPHandlerContextHolder.post_endpoint_and_callback.insert(
 			{post_endpoint.post_endpoint, {post_endpoint.post_accept_type, post_endpoint.callback_fn}}
 		);
 	}

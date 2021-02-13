@@ -51,7 +51,7 @@ namespace Async{
 	};
 
 	extern PeerState GlobalPeerState[MAXFDS];
-	extern const HTTP::LOG::LoggerHelper* http_log_handler;
+	//extern const HTTP::LOG::LoggerHelper* http_log_handler;
 
 	struct FDStatus{
 		bool want_read; bool want_write; 

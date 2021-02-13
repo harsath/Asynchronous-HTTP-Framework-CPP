@@ -7,7 +7,6 @@
 #include "HTTPLogHelpers.hpp"
 #include "HTTPMessage.hpp"
 #include "HTTPParserRoutine.hpp"
-#include "HTTPResponder.hpp"
 #include "internal/AsyncHelpers.hpp"
 #include <memory>
 #include <string>

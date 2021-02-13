@@ -1,24 +1,3 @@
-// libhttpserver SSL HTTP Server Implementation
-// Copyright © 2020 Harsath
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-// OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 #pragma once
 #include <cstdio>
 #include <fmt/format.h>
@@ -61,29 +40,29 @@ namespace HTTP::LOG{
 	};
 
 	inline void ErrorContext::log(const std::string &fmt_str) const noexcept {
-		std::fprintf(this->_error_stream, "[Error] %s\n", fmt_str.c_str());
-		fflush(this->_error_stream);
+		std::fprintf(_error_stream, "[Error] %s\n", fmt_str.c_str());
+		fflush(_error_stream);
 	}
 
 	inline void AccessContext::log(const std::string &fmt_str) const noexcept {
-		std::fprintf(this->_access_stream, "[Access] %s\n", fmt_str.c_str());
-		fflush(this->_access_stream);
+		std::fprintf(_access_stream, "[Access] %s\n", fmt_str.c_str());
+		fflush(_access_stream);
 	}
 
 	inline ErrorContext::ErrorContext(const std::string& file_name){
-		this->_error_stream = std::fopen(file_name.c_str(), "a");
+		_error_stream = std::fopen(file_name.c_str(), "a");
 	}
 
 	inline ErrorContext::~ErrorContext(){
-		std::fclose(this->_error_stream);
+		std::fclose(_error_stream);
 	}
 
 	inline AccessContext::AccessContext(const std::string& file_name){
-		this->_access_stream = std::fopen(file_name.c_str(), "a");
+		_access_stream = std::fopen(file_name.c_str(), "a");
 	}
 
 	inline AccessContext::~AccessContext(){
-		std::fclose(this->_access_stream);
+		std::fclose(_access_stream);
 	}
 
 	class LoggerFactory{
