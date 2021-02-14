@@ -59,7 +59,13 @@ namespace HTTP::HTTPHandler{
 		std::string auth_credentials_file;
 		std::string ssl_cert;
 		std::string ssl_private_key;
+		std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> ssl_context;
 		LOG::LogMessage* http_log_holder{nullptr};
+		HTTPConst::HTTP_SERVER_TYPE server_type;
+		~HTTPHandlerContext(){
+			if(basic_auth_handler) delete basic_auth_handler;
+			if(http_log_holder) delete http_log_holder;
+		}
 	};
 	extern HTTPHandler::HTTPHandlerContext HTTPHandlerContextHolder;
 
