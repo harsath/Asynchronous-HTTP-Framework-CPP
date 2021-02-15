@@ -22,7 +22,6 @@
 namespace HTTP::HTTPHelpers{
 	struct HTTPTransactionContext{
 		int peer_fd;
-		//std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter> ssl_connection_handler{nullptr};
 		bool http_message_written{false};
 		std::string peer_ip;
 	};

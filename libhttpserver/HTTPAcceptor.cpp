@@ -16,6 +16,7 @@
 #include <memory>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <openssl/ssl.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
@@ -75,7 +76,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
 	}
 	for(;;){
 		int nready = ::epoll_wait(epoll_fd, events, Async::MAXFDS, -1);
-		for(std::size_t i = 0; i < nready; i++){
+		for(std::size_t i{}; i < nready; i++){
 		  if(events[i].events & EPOLLERR){
 		  	perror("epoll_wait returned EPOLLERR");
 			exit(EXIT_FAILURE);
@@ -97,7 +98,7 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
 		    }else{
 			Async::make_socket_nonblocking(new_sock_fd);
 			if(new_sock_fd >= Async::MAXFDS){
-			  std::cout << "socket fd" << new_sock_fd << " >= MAXFDS %d" << Async::MAXFDS << std::endl;
+			  std::cout << "socket fd " << new_sock_fd << " >= MAXFDS " << Async::MAXFDS << std::endl;
 			}
 			Async::FDStatus status = Async::OnPeerConnected(new_sock_fd, &peer_addr, peer_addr_len);
 			epoll_event event = {0};
@@ -187,7 +188,8 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
 	_ssl_socket.bind_sock();
 	HTTPHandler::HTTPHandlerContextHolder.auth_credentials_file = auth_cred_file;
 	HTTPHandler::HTTPHandlerContextHolder.path_to_root = path_to_root;
-	HTTPHandler::HTTPHandlerContextHolder.ssl_context = HTTP::SSL::HTTPConfigSSLContext(ssl_cert.c_str(), ssl_private_key.c_str());
+	HTTPHandler::HTTPHandlerContextHolder.ssl_context = 
+		HTTP::SSL::HTTPConfigSSLContext(ssl_cert.c_str(), ssl_private_key.c_str());
 	HTTPHandler::HTTPHandlerContextHolder.ssl_cert = ssl_cert;
 	HTTPHandler::HTTPHandlerContextHolder.ssl_private_key = ssl_private_key;
 	HTTPHandler::HTTPHandlerContextHolder.server_type = HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER;
@@ -198,25 +200,80 @@ void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
 	}
  }
 
- void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPRunEventloop(){
- 	// for(;;){
-        //
- 	// 	int client_fd = this->_TCPEndpoint.accept_loop();
- 	// 	bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
- 	// 	if(sentinel_check){
- 	// 		this->_HTTPContext->SSLConnectionHandler = HTTP::SSL::SSLConnectionAccept(this->_SSLContext.get(), client_fd);
-        //
- 	// 		HTTP::SSL::ssl_read_data(this->_HTTPContext->SSLConnectionHandler.get(), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
-        //
- 	// 		this->_HTTPContext->HTTPClientFD = client_fd;
- 	// 		this->_HTTPContext->HTTPLogHolder.client_ip = this->_TCPEndpoint.get_serving_client_ip();
-        //
- 	// 		this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
-        //
- 	// 		HTTP::HTTPHelpers::close_connection(client_fd);
-        //
- 	// 		::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
- 	// 		std::cout << "HTTPS-Transaction done\n";
- 	// 	}
- 	// }
+void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPRunEventloop(){
+	using namespace HTTP;
+	using namespace HTTP::HTTPHandler;
+	int epoll_fd = ::epoll_create1(0);
+	if(epoll_fd < 0){
+		perror("epoll_create1 fail");
+		::exit(EXIT_FAILURE);
+	}
+	epoll_event accept_event;
+	accept_event.data.fd = _ssl_socket.get_file_descriptor();
+	accept_event.events = EPOLLIN;
+	if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _ssl_socket.get_file_descriptor(), &accept_event) < 0){
+		perror("epoll_ctl");
+		::exit(EXIT_FAILURE);
+	}
+	epoll_event* events = (epoll_event*)::calloc(Async::MAXFDS, sizeof(epoll_event));
+	if(events == nullptr){
+		perror("Allocation fail");
+		::exit(EXIT_FAILURE);
+	}
+	for(;;){
+		int nready = ::epoll_wait(epoll_fd, events, Async::MAXFDS, -1);
+		for(std::size_t i{}; i < nready; i++){
+		  if(events[i].events & EPOLLERR){
+		  	perror("epoll_wait returned EPOLLERR");
+			::exit(EXIT_FAILURE);
+		  }
+		  //New peer is trying to connect.
+		  if(events[i].data.fd == _ssl_socket.get_file_descriptor()){
+		    sockaddr_in peer_addr;
+		    socklen_t peer_addr_len = sizeof(peer_addr);
+		    int new_sock_fd = ::accept(_ssl_socket.get_file_descriptor(),
+				               (sockaddr*)&peer_addr, &peer_addr_len);
+		    if(new_sock_fd < 0){
+		    	// Again, extremely rare case
+			if(errno == EAGAIN || errno == EWOULDBLOCK){
+			  std::cout << "accept returned EAGAIN or EWOULDBLOCK\n";
+			}else{
+			  perror("accept");
+			  ::exit(EXIT_FAILURE);
+			}
+		    }else{
+			Async::make_socket_nonblocking(new_sock_fd);
+			if(new_sock_fd >= Async::MAXFDS){
+			  std::cout << "socket fd " << new_sock_fd << " >= MAXFDS " << Async::MAXFDS << std::endl;
+			}
+		        std::unique_ptr<::SSL, SSL::SSL_Deleter> tmp_ssl_handler{
+			        ::SSL_new(HTTPHandlerContextHolder.ssl_context.get())};
+		        if(!tmp_ssl_handler.get()){
+			  ::ERR_print_errors_fp(stderr);
+			  ::exit(EXIT_FAILURE);
+		        }
+			::SSL_set_fd(tmp_ssl_handler.get(), new_sock_fd);		
+			int ssl_ret = ::SSL_accept(tmp_ssl_handler.get());
+			if(ssl_ret < 0){
+			  epoll_event event = {0};
+			  event.data.fd = new_sock_fd;
+			  ::ERR_print_errors_fp(stderr);
+			  int error_code = ::SSL_get_error(tmp_ssl_handler.get(), 0);
+			  if(error_code <= 0 && (error_code == SSL_ERROR_WANT_READ)){
+				perror("Need to wait until the socket is readable");
+				event.events |= EPOLLIN;	
+			  }else if(error_code <= 0 && (error_code == SSL_ERROR_WANT_WRITE)){
+			  	perror("Need to wait until the socket is writable");
+				event.events |= EPOLLOUT;
+			  }else{
+			  	perror("Socket is not ready");
+				::close(new_sock_fd);
+			  }
+			}else{
+
+			}
+		    }
+		  }
+		}
+	}
 }

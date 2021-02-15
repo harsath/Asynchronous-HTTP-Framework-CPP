@@ -48,6 +48,7 @@ namespace Async{
 		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer_peer;
 		std::unique_ptr<blueth::io::IOBuffer<char>> io_buffer_response;
 		std::unique_ptr<HTTP::HTTPMessage> http_message_peer;
+		std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter> ssl_connection_handler;
 	};
 
 	extern PeerState GlobalPeerState[MAXFDS];
