@@ -60,6 +60,7 @@ namespace HTTP::HTTPHandler{
 		std::string ssl_cert;
 		std::string ssl_private_key;
 		std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> ssl_context;
+		std::unique_ptr<::BIO, HTTP::SSL::SSL_BIO_Deleter> bio_error;
 		LOG::LogMessage* http_log_holder{nullptr};
 		HTTPConst::HTTP_SERVER_TYPE server_type;
 		~HTTPHandlerContext(){

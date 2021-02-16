@@ -25,6 +25,12 @@ namespace HTTP::SSL{
 		}
 	};
 
+	struct SSL_BIO_Deleter{
+		void operator()(BIO* error_bio){
+			::BIO_free(error_bio);
+		}
+	};
+
 	struct SSL_Deleter{
 		void operator()(::SSL* ssl){
 			::SSL_shutdown(ssl);

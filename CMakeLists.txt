@@ -33,7 +33,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(EXEC_FILES ./main.cpp)
+set(EXEC_FILES ./main-ssl.cpp)
 
 enable_testing()
 

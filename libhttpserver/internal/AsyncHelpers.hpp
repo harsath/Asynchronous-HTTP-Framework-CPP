@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <cassert>
 #include <memory>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 #include <unistd.h>
 #include <io/IOBuffer.hpp>
 #include <fcntl.h>
@@ -76,19 +78,58 @@ namespace Async{
 		}
 	}
 
-	inline FDStatus OnPeerConnected(int socket, struct sockaddr_in* peer_addr, socklen_t peer_addr_len){
+	inline FDStatus _handleSSLHandshake(int peer_fd){
+		using namespace HTTP::HTTPHandler;
+		assert(peer_fd < MAXFDS);
+		PeerState* peer_state = &GlobalPeerState[peer_fd];
+		std::cout << "SSL handshake\n";
+		if(peer_state->ssl_connection_handler == nullptr){
+			peer_state->ssl_connection_handler = 
+				std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter>
+				(::SSL_new(HTTPHandlerContextHolder.ssl_context.get()));
+			if(peer_state->ssl_connection_handler == nullptr){
+				perror("SSL_new failed");
+				::exit(EXIT_FAILURE);
+			}
+		 	::SSL_set_fd(peer_state->ssl_connection_handler.get(), peer_fd);
+			::SSL_set_accept_state(peer_state->ssl_connection_handler.get());
+		}
+		int ret = ::SSL_do_handshake(peer_state->ssl_connection_handler.get());
+		if(ret == 1){
+			std::cout << "Ssl connection success\n";
+			return WantRead;
+		}
+		int ssl_error = ::SSL_get_error(peer_state->ssl_connection_handler.get(), peer_fd);
+		if(ssl_error == SSL_ERROR_WANT_WRITE){
+			std::cout << "Error: Want Write\n";
+			return WantWrite;
+		}else if(ssl_error == SSL_ERROR_WANT_READ){
+			std::cout << "Error: Want Read\n";
+			return WantRead;
+		}else{
+			::ERR_print_errors(HTTPHandlerContextHolder.bio_error.get());
+			return WantNoReadWrite;
+		}
+	}
+
+	inline FDStatus OnPeerConnected(int peer_fd, sockaddr_in* peer_addr, socklen_t peer_addr_len){
 		using namespace HTTP::HTTPHelpers;
 		using namespace HTTP::HTTPConst;
-		assert(socket < MAXFDS);		
-		PeerState* peer_state = &GlobalPeerState[socket];
+		assert(peer_fd < MAXFDS);
+		PeerState* peer_state = &GlobalPeerState[peer_fd];
 		peer_state->state = MessageProcessingState::InitialRequestAck;
 		peer_state->peer_transaction_context = std::make_unique<HTTPTransactionContext>();
 		peer_state->io_buffer_peer = std::make_unique<blueth::io::IOBuffer<char>>(INITIAL_IO_BUFFER_SIZE);
 		peer_state->io_buffer_response = std::make_unique<blueth::io::IOBuffer<char>>(INITIAL_IO_BUFFER_SIZE);
 		peer_state->http_message_peer = std::make_unique<HTTP::HTTPMessage>();
-		peer_state->peer_transaction_context->peer_fd = socket;
+		peer_state->peer_transaction_context->peer_fd = peer_fd;
 		peer_state->peer_transaction_context->peer_ip = ::inet_ntoa(peer_addr->sin_addr);
 		peer_state->http_message_parse_state = ParserState::REQUEST_LINE_BEGIN;
+		peer_state->ssl_connection_handler = nullptr;
+		if(HTTPHandler::HTTPHandlerContextHolder.server_type == 
+				HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER){
+			return _handleSSLHandshake(peer_fd);
+		}
 		return WantRead;
 	}
 	
@@ -101,22 +142,35 @@ namespace Async{
 		{ return WantWrite; }
 		constexpr std::size_t TMP_READ_SIZE = 2048;
 		char tmp_reader[TMP_READ_SIZE];
-		int nbytes = ::recv(peer_fd, tmp_reader, sizeof tmp_reader, 0);
-		if(nbytes == 0){
-			return WantNoReadWrite;
-		}else if(nbytes < 0){
-			if(errno == EAGAIN || errno == EWOULDBLOCK){
-				return WantRead;
-			}else{
-				perror("recv");
-				::exit(EXIT_FAILURE);
+		int nbytes;
+		if(HTTPHandler::HTTPHandlerContextHolder.server_type == 
+				HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER){
+			nbytes = ::recv(peer_fd, tmp_reader, sizeof tmp_reader, 0);
+			if(nbytes == 0){
+				return WantNoReadWrite;
+			}else if(nbytes < 0){
+				if(errno == EAGAIN || errno == EWOULDBLOCK){
+					return WantRead;
+				}else{
+					perror("recv");
+					::exit(EXIT_FAILURE);
+				}
+			}
+		}else{
+			nbytes = ::SSL_read(peer_state->ssl_connection_handler.get(), tmp_reader, sizeof tmp_reader);
+			std::cout << "read: " << nbytes << std::endl;
+			if(nbytes == 0){
+				return WantNoReadWrite;
+			}else if(nbytes < 0){
+				return WantNoReadWrite;
 			}
 		}
 		// We do incremental parsing as bytes come-in
 		peer_state->io_buffer_peer->appendRawBytes(tmp_reader, nbytes);
 		std::pair<ParserState, std::unique_ptr<HTTP::HTTPMessage>> parser_return = 
 			HTTP::HTTP1Parser::HTTP11Parser(
-				peer_state->io_buffer_peer, peer_state->http_message_parse_state, std::move(peer_state->http_message_peer)
+				peer_state->io_buffer_peer, peer_state->http_message_parse_state, 
+				std::move(peer_state->http_message_peer)
 			);
 		peer_state->http_message_parse_state = parser_return.first;
 		peer_state->http_message_peer = std::move(parser_return.second);
@@ -144,20 +198,28 @@ namespace Async{
 			return WantNoReadWrite;
 		}
 		std::size_t bytes_to_send = peer_state->io_buffer_response->getDataSize();
-		int num_sent = ::send(peer_fd, peer_state->io_buffer_response->getStartOffsetPointer(), bytes_to_send, 0);
-		if(num_sent == -1){
-			if(errno == EAGAIN || errno == EWOULDBLOCK){
+		int num_sent;
+		if(HTTPHandler::HTTPHandlerContextHolder.server_type ==
+				HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER){
+			num_sent = ::send(peer_fd, peer_state->io_buffer_response->getStartOffsetPointer(), bytes_to_send, 0);
+			if(num_sent == -1){
+				if(errno == EAGAIN || errno == EWOULDBLOCK){
+					return WantWrite;
+				}else{
+					perror("send");
+					::exit(EXIT_FAILURE);
+				}
+			}
+			if(num_sent < bytes_to_send){
+				peer_state->io_buffer_response->modifyStartOffset(num_sent);
 				return WantWrite;
 			}else{
-				perror("send");
-				::exit(EXIT_FAILURE);
+				// Everything sent; We can close the connection
+				return WantNoReadWrite;
 			}
-		}
-		if(num_sent < bytes_to_send){
-			peer_state->io_buffer_response->modifyStartOffset(num_sent);
-			return WantWrite;
 		}else{
-			// Everything sent; We can close the connection
+			num_sent = ::SSL_write(peer_state->ssl_connection_handler.get(),
+					       peer_state->io_buffer_response->getStartOffsetPointer(), bytes_to_send);
 			return WantNoReadWrite;
 		}
 	}
