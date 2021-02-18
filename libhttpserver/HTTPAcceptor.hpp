@@ -17,9 +17,9 @@
 #include <sys/un.h>
 #include <netinet/in.h>
 #include "HTTPBasicAuthHandler.hpp"
+#include "internal/SSLHelpers.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
-#include "HTTPSSLHelpers.hpp"
 #include "HTTPHandler.hpp"
 #include "HTTPParserRoutine.hpp"
 #include "HTTPLogHelpers.hpp"

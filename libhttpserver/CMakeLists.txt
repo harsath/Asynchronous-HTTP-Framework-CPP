@@ -20,7 +20,7 @@ set(
 	./HTTPConstants.hpp
 	./HTTPLogHelpers.hpp
 	./HTTPParserRoutine.hpp
-	./HTTPSSLHelpers.hpp
+	# ./HTTPSSLHelpers.hpp
 	./HTTPParser.cpp
 	./HTTPParser.hpp
 	./HTTPBasicAuthHandler.hpp
@@ -44,18 +44,19 @@ find_package(Threads REQUIRED)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 
-set(OPENSSL_USE_STATIC_LIBS TRUE)
+# set(OPENSSL_USE_STATIC_LIBS TRUE)
 
-find_package(OpenSSL REQUIRED)
+# find_package(OpenSSL REQUIRED)
 
 target_link_libraries(
 	${LIB_BIN_NAME} 
-	OpenSSL::Crypto
-	OpenSSL::SSL
+	# OpenSSL::Crypto
+	# OpenSSL::SSL
 	nlohmann_json::nlohmann_json
 	fmt::fmt-header-only
 	Threads::Threads
 	bcrypt
 	3rd_party
 	libblueth
+	wolfssl
 	)

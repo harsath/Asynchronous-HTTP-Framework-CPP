@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <fstream>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include "HTTPConstants.hpp"
 #include <string.h>
@@ -21,9 +22,12 @@
 #include "HTTPLogHelpers.hpp"
 #include "HTTPBasicAuthHandler.hpp"
 #include "HTTPMessage.hpp"
+#include "internal/SSLHelpers.hpp"
 #include <variant>
 #include <vector>
 #include <unordered_map>
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
 #include <functional>
 #include <nlohmann/json.hpp>
 #include <netinet/tcp.h>
@@ -59,9 +63,9 @@ namespace HTTP::HTTPHandler{
 		std::string auth_credentials_file;
 		std::string ssl_cert;
 		std::string ssl_private_key;
-		std::unique_ptr<::SSL_CTX, HTTP::SSL::SSL_CTX_Deleter> ssl_context;
-		std::unique_ptr<::BIO, HTTP::SSL::SSL_BIO_Deleter> bio_error;
+		std::unique_ptr<::WOLFSSL_CTX, SSL::WOLFSSL_CTX_Deleter> ssl_context;
 		LOG::LogMessage* http_log_holder{nullptr};
+		epoll_event* events; // TODO: think about managing this memory(We cannot use smart_ptr I guess)
 		HTTPConst::HTTP_SERVER_TYPE server_type;
 		~HTTPHandlerContext(){
 			if(basic_auth_handler) delete basic_auth_handler;

@@ -16,7 +16,6 @@
 #include "HTTPBasicAuthHandler.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPLogHelpers.hpp"
-#include "HTTPSSLHelpers.hpp"
 #include <filesystem>
 
 namespace HTTP::HTTPHelpers{
