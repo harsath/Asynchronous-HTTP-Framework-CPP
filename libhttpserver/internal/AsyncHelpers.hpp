@@ -5,8 +5,6 @@
 #include <cstdlib>
 #include <cassert>
 #include <memory>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
 #include <unistd.h>
 #include <io/IOBuffer.hpp>
 #include <fcntl.h>
@@ -19,7 +17,8 @@
 #include "../HTTPCommonMessageTemplates.hpp"
 #include "../HTTPParser.hpp"
 #include "../HTTPHandler.hpp"
-#include "wolfssl/ssl.h"
+#include <wolfssl/options.h>
+#include <wolfssl/ssl.h>
 
 using namespace HTTP;
 using namespace HTTP::HTTP1Parser;
@@ -65,7 +64,7 @@ namespace Async{
 		constexpr FDStatus& operator=(const FDStatus& fd_status) noexcept
 		{ want_read = fd_status.want_read; want_write = fd_status.want_write; return *this; }
 		constexpr FDStatus(const FDStatus& fd_status) 
-			noexcept : want_read{fd_status.want_write}, want_write{fd_status.want_write} {}
+			noexcept : want_read{fd_status.want_read}, want_write{fd_status.want_write} {}
 		constexpr FDStatus(FDStatus&& fd_status)
 			noexcept : want_read{fd_status.want_read}, want_write{fd_status.want_write} {}
 		constexpr FDStatus()
@@ -154,7 +153,7 @@ namespace Async{
 		peer_state->io_buffer_peer->appendRawBytes(tmp_reader, nbytes);
 		return _http_request_processor(peer_fd);
 	}
-	
+
 	inline FDStatus OnPeerReadySendPlain(int peer_fd){
 		assert(peer_fd < MAXFDS);
 		PeerState* peer_state = &GlobalPeerState[peer_fd];
@@ -220,7 +219,7 @@ namespace Async{
 		return WantRead;
 	}
 
-	inline FDStatus OnPeerReadySendSSL(int peer_fd, int peer_index){
+	inline FDStatus OnPeerReadySendSSL(int peer_fd){
 		assert(peer_fd < MAXFDS);			
 		PeerState* peer_state = &GlobalPeerState[peer_fd];
 		if(peer_state->io_buffer_response->getDataSize() == 0)
@@ -252,132 +251,149 @@ namespace Async{
 		{ std::perror(perror_str); ::exit(EXIT_FAILURE); }
 	}
 
-	inline void event_loop(int server_sock_fd){
+	inline void event_loop_plaintext(int server_sock_fd){
 		using namespace HTTP;
 		using namespace HTTP::HTTPHandler;
 		using namespace HTTP::HTTPConst;
-		int return_code;
 		int epoll_fd = ::epoll_create1(0);
 		if(epoll_fd < 0){
-			std::perror("epoll_create1 failed");
+			std::perror("epoll_create1 fail");
 			::exit(EXIT_FAILURE);
-		}		
+		}
 		epoll_event accept_event;
 		accept_event.data.fd = server_sock_fd;
 		accept_event.events = EPOLLIN;
-
-		return_code = ::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_sock_fd, &accept_event);
-		_negative_value_check(return_code, "epoll_ctl EPOLL_CTL_ADD failed");
-
-		epoll_event* events = HTTPHandlerContextHolder.events;
-		events = (epoll_event*)::calloc(Async::MAXFDS, sizeof(epoll_event));
-		if(events == nullptr){
-			std::perror("Allocation for epoll_event failed");
+		if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, server_sock_fd, &accept_event) < 0){
+			std::perror("epoll_ctl");
 			::exit(EXIT_FAILURE);
 		}
-		bool is_ssl_server = 
-			HTTPHandlerContextHolder.server_type == HTTP_SERVER_TYPE::SSL_SERVER ? true : false;
-		for(;;){
-			int n_peer_ready = ::epoll_wait(epoll_fd, events, Async::MAXFDS, -1);
-			for(std::size_t peer_index{}; peer_index < n_peer_ready; peer_index++){
-				if(events[peer_index].events & EPOLLERR)
-				{ _negative_value_check(-1, "epoll_wait returned EPOLLERR"); }
-				if(events[peer_index].events & EPOLLIN){
-				   if(events[peer_index].data.fd == server_sock_fd){
-				      sockaddr_in peer_addr;
-				      socklen_t peer_addr_len = sizeof(peer_addr);
-				      int new_sock_fd = ::accept(server_sock_fd, (sockaddr*)&peer_addr, &peer_addr_len);
-				      if(new_sock_fd < 0){
-				      	// Rare case
-					if(errno == EAGAIN || errno == EWOULDBLOCK)
-					{ std::cout << "accept() returned EAGIAN or EWOULDBLOCK\n"; }
-					else
-					{ _negative_value_check(-1, "accept() failed"); }
-				      }else{
-					 if(is_ssl_server){ 
-						 PeerState* peer_state = &GlobalPeerState[new_sock_fd];	 
-						 peer_state->ssl_connection_handler = 
-							 std::unique_ptr<::WOLFSSL, HTTP::SSL::WOLFSSL_Deleter>
-							 (::wolfSSL_new(HTTPHandlerContextHolder.ssl_context.get()));
-						 if(peer_state->ssl_connection_handler.get() == nullptr){
-							 std::perror("wolfSSL_new failed");
-							 ::exit(EXIT_FAILURE);
-						 }
-						 ::wolfSSL_set_fd((WOLFSSL*)peer_state->ssl_connection_handler.get(), new_sock_fd);
-						 int ret = ::wolfSSL_accept((WOLFSSL*)peer_state->ssl_connection_handler.get());
-						 if(ret != SSL_SUCCESS){
-						     fprintf(stderr, "wolfSSL_accept error = %d\n",wolfSSL_get_error(
-									     (WOLFSSL*)peer_state->ssl_connection_handler.get(), ret));
-						     ::exit(EXIT_FAILURE);
-						 }
-						 std::cout << "YES\n";
-					 }
-				         make_socket_nonblocking(new_sock_fd);
-					 if(new_sock_fd > MAXFDS)
-					 { std::cout << "Socket is larger than MAXFDS\n"; }
-					 FDStatus status;
-					 if(!is_ssl_server)
-					 { status = OnPeerConnectedPlain(new_sock_fd, &peer_addr, peer_addr_len); }
-					 else
-					 { status = OnPeerConnectedSSL(new_sock_fd, &peer_addr, peer_addr_len); }
-					 epoll_event event = {0};
-					 event.data.fd = new_sock_fd;
-					 if(status.want_read) { event.events |= EPOLLIN; }
-					 if(status.want_write){ event.events |= EPOLLOUT; }
-					 return_code = ::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_sock_fd, &event);
-					 _negative_value_check(return_code, "epoll_ctl EPOLL_CTL_ADD failed");
-				      }
-				   }
-				}else if(events[peer_index].events & EPOLLOUT){
-				   // Peer is already connected, but ready for send() event
-				   int peer_fd = events[peer_index].data.fd;
-				   FDStatus status;
-				   if(!is_ssl_server)
-				   { status = OnPeerReadySendPlain(peer_fd); }
-				   else
-				   { status = OnPeerReadySendSSL(peer_fd, peer_index); }
-				   epoll_event event = {0};
-				   event.data.fd = peer_fd;
-				   if(status.want_read) { event.events |= EPOLLIN; }
-				   if(status.want_write){ event.events |= EPOLLOUT; }
-				   if(event.events == 0){
-				   	// Let's close the connection;
-					return_code = ::epoll_ctl(epoll_fd, EPOLL_CTL_DEL, peer_fd, NULL);
-					_negative_value_check(return_code, "epoll_ctl EPOLL_CTL_DEL");
-					_release_resource_peer(peer_fd);
-					::close(peer_fd);
-				   }else{
-				   	return_code = ::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event);
-					_negative_value_check(return_code, "epoll_ctl EPOLL_CTL_MOD");
-				   }
-				}else if(events[peer_index].events & EPOLLIN){
-					// Peer is already connected, but ready for recv() event
-					int peer_fd = events[peer_index].data.fd;
-					FDStatus status;
-					if(!is_ssl_server)
-					{ status = OnPeerReadyRecvPlain(peer_fd); }
-					else
-					{ status = OnPeerReadyRecvSSL(peer_fd); }
-					epoll_event event = {0};
-					event.data.fd = peer_fd;
-					if(status.want_read) { event.events |= EPOLLIN; }
-					if(status.want_write){ event.events |= EPOLLOUT; }
-					if(event.events == 0){
-						// Let's closethe connection
-						return_code = ::epoll_ctl(epoll_fd, EPOLL_CTL_DEL, peer_fd, NULL);
-						_negative_value_check(return_code, "epoll_ctl EPOLL_CTL_DEL");
-						_release_resource_peer(peer_fd);
-						::close(peer_fd);
-					}else{
-						return_code = ::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event);
-						_negative_value_check(return_code, "epoll_ctl EPOLL_CTL_MOD");
-					}
-				}else{
-					printf("Unknown epoll() event");
-					::close(events[peer_index].data.fd);
-				}
-			}
+		epoll_event* events = HTTPHandlerContextHolder.events;
+		events = (epoll_event*)::calloc(MAXFDS,  sizeof(epoll_event));
+		if(events == nullptr){
+			std::perror("Allocation fail");
+			::exit(EXIT_FAILURE);
 		}
+		for(;;){
+			int nready = ::epoll_wait(epoll_fd, events, MAXFDS, -1);
+			for(std::size_t peer_index{}; peer_index < nready; peer_index++){
+			  if(events[peer_index].events & EPOLLERR){
+				  std::perror("epoll_wait returned EPOLLERR");
+				::exit(EXIT_FAILURE);
+			  }  
+			  // New peer is trying to connect.
+			  if(events[peer_index].data.fd == server_sock_fd){
+			    sockaddr_in peer_addr;
+			    socklen_t peer_addr_len = sizeof(peer_addr);
+			    int new_sock_fd = ::accept(server_sock_fd, 
+					               (sockaddr*)&peer_addr, &peer_addr_len);
+			    if(new_sock_fd < 0){
+				// This is extremely rare case
+			    	if(errno == EAGAIN || errno == EWOULDBLOCK){
+				  std::cout << "accept returned EAGIAN or EWOULDBLOCK\n"; 
+			    	}else{
+					std::perror("accept");
+				  ::exit(EXIT_FAILURE);
+			    	}
+			    }else{
+				make_socket_nonblocking(new_sock_fd);
+				if(new_sock_fd >= MAXFDS){
+				  std::cout << "socket fd " << new_sock_fd << " >= MAXFDS " << MAXFDS << std::endl;
+				}
+				FDStatus status = OnPeerConnectedPlain(new_sock_fd, &peer_addr, peer_addr_len);
+				epoll_event event = {0};
+				event.data.fd = new_sock_fd;
+				if(status.want_read) { event.events |= EPOLLIN; }
+				if(status.want_write){ event.events |= EPOLLOUT; }
+				if(::epoll_ctl(epoll_fd, EPOLL_CTL_ADD, new_sock_fd, &event) < 0){
+					std::perror("epoll_ctl EPOLL_CTL_ADD");
+				  ::exit(EXIT_FAILURE);
+				}
+			    }
+			  }else{
+			    // Peer is already connected, but ready for IO
+			    if(events[peer_index].events & EPOLLIN){
+			    	// Ready for reading
+				int peer_fd = events[peer_index].data.fd;
+				FDStatus status = OnPeerReadyRecvPlain(peer_fd);
+				epoll_event event = {0};
+				event.data.fd = peer_fd;
+				if(status.want_read) { event.events |= EPOLLIN; }
+				if(status.want_write){ event.events |= EPOLLOUT; }
+				if(event.events == 0){
+					// We processed the peer's HTTP request message, Let's close the connection
+					if(::epoll_ctl(epoll_fd, EPOLL_CTL_DEL, peer_fd, NULL) < 0){
+						std::perror("epoll_ctl EPOLL_CTL_DEL");
+					}
+					PeerState* current_peer_state = &GlobalPeerState[peer_fd];
+					current_peer_state->peer_transaction_context.reset();
+					current_peer_state->http_message_peer.reset();
+					current_peer_state->io_buffer_peer.reset();
+					current_peer_state->io_buffer_response.reset();
+					::close(peer_fd);
+				}else if(::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event) < 0){
+					std::perror("epoll_ctl EPOLL_CTL_MOD");
+					::exit(EXIT_FAILURE);
+				}
+			    }else if(events[peer_index].events & EPOLLOUT){
+			    	// Ready for writing
+				int peer_fd = events[peer_index].data.fd;
+				FDStatus status = OnPeerReadySendPlain(peer_fd);
+				epoll_event event = {0};
+				event.data.fd = peer_fd;
+				if(status.want_read){
+					event.events |= EPOLLIN;
+				}
+				if(status.want_write){
+					event.events |= EPOLLOUT;
+				}
+				if(event.events == 0){
+					if(::epoll_ctl(epoll_fd, EPOLL_CTL_DEL, peer_fd, NULL) < 0){
+						std::perror("epoll_ctl EPOLL_CTL_DEL");
+					}
+					PeerState* current_peer_state = &GlobalPeerState[peer_fd];
+					current_peer_state->peer_transaction_context.reset();
+					current_peer_state->http_message_peer.reset();
+					current_peer_state->io_buffer_peer.reset();
+					current_peer_state->io_buffer_response.reset();
+					::close(peer_fd);
+				}else if(::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event) < 0){
+					std::perror("epoll_ctl EPOLL_CTL_MOD");
+					::exit(EXIT_FAILURE);
+				}
+			      }
+			    }
+			  }
+			}
 	}
 
-}
+	// TODO: This will be changed to wolfSSL's Async implementation ASAP
+	inline void event_loop_ssl(int server_sock_fd){
+		using namespace HTTP;
+		using namespace HTTP::HTTPHandler;
+		using namespace HTTP::HTTPConst;
+
+		sockaddr_in client_addr;
+		socklen_t client_addr_len;
+		for(;;){
+			int new_sock_fd = ::accept(server_sock_fd, (sockaddr*)&client_addr, &client_addr_len);
+			PeerState* peer_state = &GlobalPeerState[new_sock_fd];
+			peer_state->ssl_connection_handler = 
+				std::unique_ptr<::WOLFSSL, HTTP::SSL::WOLFSSL_Deleter>
+				(::wolfSSL_new(HTTPHandlerContextHolder.ssl_context.get()));
+			if(peer_state->ssl_connection_handler.get() == nullptr){
+				std::perror("wolfSSL_new failed");
+				::exit(EXIT_FAILURE);
+			}
+			::wolfSSL_set_fd((WOLFSSL*)peer_state->ssl_connection_handler.get(), new_sock_fd);
+			int ret = ::wolfSSL_accept((WOLFSSL*)peer_state->ssl_connection_handler.get());
+			if(ret != SSL_SUCCESS){
+			    fprintf(stderr, "wolfSSL_accept error = %d\n",wolfSSL_get_error(
+						     (WOLFSSL*)peer_state->ssl_connection_handler.get(), ret));
+			    continue;
+			}
+			OnPeerConnectedSSL(new_sock_fd, &client_addr, client_addr_len);
+			OnPeerReadyRecvSSL(new_sock_fd);
+			OnPeerReadySendSSL(new_sock_fd);
+		}
+	}
+} // end namespace Async

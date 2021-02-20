@@ -52,7 +52,7 @@ namespace HTTP::HTTPHandler{
 	struct HTTPHandlerContext{
 		std::string path_to_root;
 		std::unordered_map<std::string, std::string> filename_and_filepath_map;
-		BasicAuth::BasicAuthHandler* basic_auth_handler{nullptr};
+		std::unique_ptr<BasicAuth::BasicAuthHandler> basic_auth_handler{nullptr};
 		std::unordered_map<
 			std::string, 
 			std::pair<
@@ -64,13 +64,9 @@ namespace HTTP::HTTPHandler{
 		std::string ssl_cert;
 		std::string ssl_private_key;
 		std::unique_ptr<::WOLFSSL_CTX, SSL::WOLFSSL_CTX_Deleter> ssl_context;
-		LOG::LogMessage* http_log_holder{nullptr};
+		std::unique_ptr<LOG::LogMessage> http_log_holder{nullptr};
 		epoll_event* events; // TODO: think about managing this memory(We cannot use smart_ptr I guess)
 		HTTPConst::HTTP_SERVER_TYPE server_type;
-		~HTTPHandlerContext(){
-			if(basic_auth_handler) delete basic_auth_handler;
-			if(http_log_holder) delete http_log_holder;
-		}
 	};
 	extern HTTPHandler::HTTPHandlerContext HTTPHandlerContextHolder;
 

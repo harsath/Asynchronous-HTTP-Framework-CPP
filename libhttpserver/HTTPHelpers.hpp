@@ -3,13 +3,11 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <openssl/ossl_typ.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unordered_map>
 #include <memory>
 #include <vector>
-#include <openssl/err.h>
 #include <unistd.h>
 #include <chrono>
 #include <fmt/format.h>
@@ -41,13 +39,6 @@ namespace HTTP::HTTPHelpers{
 			perror(err_str.c_str());	
 			exit(EXIT_FAILURE);
 		}	
-	}
-
-	inline void ssl_err_check(int returner, const std::string& err_str){
-		if(returner < 0){
-			ERR_print_errors_fp(stderr);
-			exit(EXIT_FAILURE);
-		}
 	}
 
 	inline char* get_today_date_full(){

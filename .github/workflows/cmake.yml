@@ -37,7 +37,7 @@ jobs:
                                 sudo apt install python3
                                 sudo apt install python3-pip
                                 pip install bcrypt
-                                git submodule update --init --recursive
+                                git submodule update --force --recursive --init --remote
                         - name: Configuring and Build
                           shell: bash
                           run: |

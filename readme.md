@@ -12,7 +12,7 @@ This project is under active development
 ##### Steps:
 1. Generate a Self-signed SSL CERT and Private Key 
 ```
-$ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+$ openssl req -x509 -nodes -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 ```
 
 2. Run, `$ mkdir build && cd build && CC=gcc-9 CXX=g++-9 cmake .. && make`

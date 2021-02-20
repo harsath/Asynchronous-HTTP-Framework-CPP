@@ -5,7 +5,6 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <memory>
-#include <openssl/ossl_typ.h>
 #include <string>
 #include <fstream>
 #include <sys/socket.h>

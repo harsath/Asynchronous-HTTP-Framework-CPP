@@ -86,16 +86,15 @@ void HTTP::HTTPHandler::HTTPPostResponseHandler(int peer_fd){
 				HTTPHandlerContextHolder.post_endpoint_and_callback.at(target_resource).first;
 			auto&& endpoint_callback_fn =
 				HTTPHandlerContextHolder.post_endpoint_and_callback.at(target_resource).second;
-			BasicAuth::BasicAuthHandler* basic_auth_handler =
-				HTTPHandlerContextHolder.basic_auth_handler;
 			if(content_type_send_by_client == content_type_supported){
 				std::unique_ptr<HTTPMessage> callback_response_message =
-					endpoint_callback_fn(http_client_message, basic_auth_handler);
-
+					endpoint_callback_fn(http_client_message, 
+								HTTPHandlerContextHolder.basic_auth_handler.get());
 				auto&& http_peer_response = callback_response_message->BuildRawResponseMessage();
 				peer_state->io_buffer_response->appendRawBytes(
 					http_peer_response.c_str(), http_peer_response.size()
 				);
+				return;
 			}else{
 				auto&& message_body = "This endpoint does not accept that Content-Type";
 				auto&& http_peer_response =
@@ -104,6 +103,7 @@ void HTTP::HTTPHandler::HTTPPostResponseHandler(int peer_fd){
 				peer_state->io_buffer_response->appendRawBytes(
 					http_peer_response.c_str(), http_peer_response.size()
 				);
+				return;
 			}
 		}else{
 			auto&& message_body = "No Content-Type header is send on the request";
@@ -113,6 +113,7 @@ void HTTP::HTTPHandler::HTTPPostResponseHandler(int peer_fd){
 			peer_state->io_buffer_response->appendRawBytes(
 				http_peer_response.c_str(), http_peer_response.size()
 			);
+			return;
 		}
 	}else{
 		auto&& message_body = "Method not allowed, No such endpoints";

@@ -42,16 +42,16 @@ bool HTTP::BasicAuth::BasicAuthHandler::check_credentials(
 	// Lets parse the user-id:password from the base64 encoded user-agent request;
 	std::optional<std::pair<std::string, std::string>> parsed_results = 
 		m_basic_auth_cred_parser(base64::b64decode(
-					reinterpret_cast<const unsigned char*>(encoded_auth_param.c_str()), encoded_auth_param.size()
-					));
+			reinterpret_cast<const unsigned char*>(encoded_auth_param.c_str()), encoded_auth_param.size()
+				));
 	if(!parsed_results.has_value()){ return false; }
 	// user-agent sent a User:Pass even though the endpoint does not need authorization
 	if(!_endpoint_cred_map.contains(endpoint)){ return true; }
 	const std::vector<std::pair<std::string, std::string>>& user_creds = _endpoint_cred_map.at(endpoint);
 	auto result = std::find_if(std::begin(user_creds), std::end(user_creds), 
 			[&parsed_results](const std::pair<std::string, std::string>& values) -> bool {
-				return ((values.first == parsed_results.value().first) && 
-						BCrypt::validatePassword(parsed_results.value().second, values.second));
+			    return ((values.first == parsed_results.value().first) && 
+					BCrypt::validatePassword(parsed_results.value().second, values.second));
 			});
 	if(result == std::end(user_creds)){ return false; }
 	return true;

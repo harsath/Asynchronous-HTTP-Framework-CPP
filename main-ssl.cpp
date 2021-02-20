@@ -28,7 +28,7 @@ std::unique_ptr<HTTP::HTTPMessage> call_back(HTTP::HTTPMessage* HTTPClientMessag
 				MessageTemplates::GenerateHTTPMessage(MessageTemplates::BASIC_AUTH_UNAUTHORIZED, "/poster");
 			return HTTPResponseMessage;
 		}
-
+		
 		auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
 		int int_value = parsed_json["value_one"];
 		std::string string_value = parsed_json["value_two"];

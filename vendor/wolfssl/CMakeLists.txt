@@ -1420,31 +1420,31 @@ if(WOLFSSL_EXAMPLES)
                  unit.test)
 endif()
 
-if(WOLFSSL_CRYPT_TESTS)
-    # Build wolfCrypt test
-    add_executable(wolfcrypttest
-        ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/test/test.c)
-    target_link_libraries(wolfcrypttest wolfssl)
-    set_property(TARGET wolfcrypttest
-                 PROPERTY RUNTIME_OUTPUT_DIRECTORY
-                 ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/test)
-    set_property(TARGET wolfcrypttest
-                 PROPERTY RUNTIME_OUTPUT_NAME
-                 testwolfcrypt)
-
-    # Build wolfCrypt benchmark
-    add_executable(wolfcryptbench
-        ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/benchmark/benchmark.c)
-    target_include_directories(wolfcryptbench PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(wolfcryptbench wolfssl)
-    set_property(TARGET wolfcryptbench
-                 PROPERTY RUNTIME_OUTPUT_DIRECTORY
-                 ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/benchmark)
-    set_property(TARGET wolfcryptbench
-                 PROPERTY RUNTIME_OUTPUT_NAME
-                 benchmark)
-endif()
+# if(WOLFSSL_CRYPT_TESTS)
+#     # Build wolfCrypt test
+#     # add_executable(wolfcrypttest
+#     #     ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/test/test.c)
+#     target_link_libraries(wolfcrypttest wolfssl)
+#     set_property(TARGET wolfcrypttest
+#                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
+#                  ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/test)
+#     set_property(TARGET wolfcrypttest
+#                  PROPERTY RUNTIME_OUTPUT_NAME
+#                  testwolfcrypt)
+#
+#     # Build wolfCrypt benchmark
+#     add_executable(wolfcryptbench
+#         ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/benchmark/benchmark.c)
+#     target_include_directories(wolfcryptbench PRIVATE
+#         ${CMAKE_CURRENT_BINARY_DIR})
+#     target_link_libraries(wolfcryptbench wolfssl)
+#     set_property(TARGET wolfcryptbench
+#                  PROPERTY RUNTIME_OUTPUT_DIRECTORY
+#                  ${CMAKE_CURRENT_SOURCE_DIR}/wolfcrypt/benchmark)
+#     set_property(TARGET wolfcryptbench
+#                  PROPERTY RUNTIME_OUTPUT_NAME
+#                  benchmark)
+# endif()
 
 ####################################################
 # Installation
