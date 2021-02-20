@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <unordered_map>
+#include <io/IOBuffer.hpp>
 #include <vector>
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
@@ -13,24 +14,17 @@ namespace HTTP{
 		private:
 			std::unique_ptr<HTTPHeaders> _HTTPHeader{nullptr};
 			std::string _raw_body;
-			std::string _request_type;
+			HTTPConst::HTTP_REQUEST_TYPE _request_type;
 			std::string _request_target;
 			std::string _http_version;
 			std::string _http_status_code;
-			std::string _response_type;
-			bool _parsed_successfully{false};
-			HTTP::HTTPConst::HTTP_RESPONSE_CODE _http_parser_status = 
+			HTTP::HTTPConst::HTTP_RESPONSE_CODE _http_response_code = 
 				HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
-
 		public:
-			explicit HTTPMessage(
-					const char* raw_read_buffer,
-					HTTP::HTTPConst::HTTP_RESPONSE_CODE& http_parser_status
-					);
 			explicit HTTPMessage();
 
-			void HTTPHeaderBuild(std::string&& ClientHeader, std::string&& ClientBody);
-			void HTTPHeaderBuild(const std::string& ClientHeader, const std::string& ClientBody);
+			void HTTPBuildMessage(std::string&& ClientHeader, std::string&& ClientBody);
+			void HTTPBuildMessage(const std::string& ClientHeader, const std::string& ClientBody);
 
 			// Add a header to HTTPHeaders
 			void AddHeader(const std::string& name, const std::string& value) noexcept;
@@ -41,8 +35,8 @@ namespace HTTP{
 			// Remove the body completly from the HTTP Message
 			int RemoveBodyFlush() noexcept;
 			
-			void SetRequestType(const std::string& req_type) noexcept;
-			std::string& GetRequestType() noexcept;
+			void SetRequestType(HTTPConst::HTTP_REQUEST_TYPE req_type) noexcept;
+			HTTPConst::HTTP_REQUEST_TYPE GetRequestType() noexcept;
 
 			void SetTargetResource(const std::string& req_resource) noexcept;
 			std::string& GetTargetResource() noexcept;
@@ -58,17 +52,12 @@ namespace HTTP{
 			const std::unique_ptr<HTTPHeaders>& ConstGetHTTPHeader() const noexcept;
 			[[nodiscard]] std::unique_ptr<HTTPHeaders> GetHTTPHeader() noexcept;
 
-			void SetResponseType(const std::string& res_type) noexcept;
-			std::string& GetResponseType() noexcept;
-
 			HTTP::HTTPConst::HTTP_RESPONSE_CODE GetResponseCode() const noexcept;
 			void SetResponseCode(HTTP::HTTPConst::HTTP_RESPONSE_CODE res_code) noexcept;
+
 			std::optional<std::string> GetHeaderValue(const std::string& name) noexcept;
 
 			std::string BuildRawResponseMessage() const noexcept;
-
-			bool ParsedSuccessfully() const noexcept;
-			void _SetParserFlag(bool flag_to_set) noexcept;
 	};
 
 } // end namesapce HTTP

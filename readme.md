@@ -12,7 +12,7 @@ This project is under active development
 ##### Steps:
 1. Generate a Self-signed SSL CERT and Private Key 
 ```
-$ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+$ openssl req -x509 -nodes -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 ```
 
 2. Run, `$ mkdir build && cd build && CC=gcc-9 CXX=g++-9 cmake .. && make`
@@ -25,8 +25,6 @@ Now, run the server with `./server`
 
 #### Note: The examples in `./examples` are NOT updated. I will update them when I find time ASAP. Checkout main.cpp and main-plain.cpp for updated code for now.
 Checkout the `./examples` dir for more info on using Callbacks and REST API examples.
-
-You can checkout the libHTTPserver's architecture in `HTTP-Server-Arch.jpg`
 
 5. You can now, test the SSL/HTTPS server through cURL or openssl's s_client
 ```
@@ -63,9 +61,3 @@ $ curl --insecure -u 'username:password$324'-v -H "Content-Type: application/jso
 ............
 ............
 ```
-
-![image](https://github.com/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231/blob/master/HTTP-Server-Arch.jpg)
-
-
-
-sidenode: sapi01 is my another Git account

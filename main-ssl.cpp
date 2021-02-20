@@ -11,7 +11,8 @@
 #include "HTTPMessage.hpp"
 #include <nlohmann/json.hpp>
 
-std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> HTTPClientMessage, HTTP::BasicAuth::BasicAuthHandler* auth_handler){
+std::unique_ptr<HTTP::HTTPMessage> call_back(HTTP::HTTPMessage* HTTPClientMessage, 
+		HTTP::BasicAuth::BasicAuthHandler* auth_handler){
 	using namespace HTTP;
 	try{
 		using json = nlohmann::json;
@@ -27,7 +28,7 @@ std::unique_ptr<HTTP::HTTPMessage> call_back(std::unique_ptr<HTTP::HTTPMessage> 
 				MessageTemplates::GenerateHTTPMessage(MessageTemplates::BASIC_AUTH_UNAUTHORIZED, "/poster");
 			return HTTPResponseMessage;
 		}
-
+		
 		auto parsed_json = json::parse(HTTPClientMessage->GetRawBody());
 		int int_value = parsed_json["value_one"];
 		std::string string_value = parsed_json["value_two"];
@@ -47,19 +48,19 @@ int main(int argc, const char* argv[]){
 
 	std::vector<HTTP::HTTPHandler::HTTPPostEndpoint> post_endpoint = { {"/poster","application/json", call_back} };
 
-	std::unique_ptr<HTTP::HTTPAcceptor::HTTPAcceptor> http_acceptor = std::make_unique<HTTP::HTTPAcceptor::HTTPAcceptorSSL>();
+	std::unique_ptr<HTTP::HTTPAcceptor::HTTPAcceptor> http_acceptor = 
+		std::make_unique<HTTP::HTTPAcceptor::HTTPAcceptorSSL>();
 	http_acceptor->HTTPStreamSock(
-			"127.0.0.1", // IPv4 addr
-			9876, // bind port
-			10,  // backlog
-			HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER,  // server type (Plaintext/SSL)
-			"./configs/html_src", // HTML src-root (or your own path)
-			post_endpoint, // json endpoint and callback fn
+			"127.0.0.1",
+			4443,
+			1000,
+			"./configs/html_src",
+			post_endpoint,
 			"./cert.pem",
 			"./key.pem",
 			"./configs/sample_secure_REST_authfile_bcrypt.json"
 			);
-	http_acceptor->HTTPStreamAccept();
+	http_acceptor->HTTPRunEventloop();
 
 	return 0;
 }

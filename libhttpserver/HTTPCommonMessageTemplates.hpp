@@ -116,6 +116,6 @@ namespace HTTP::MessageTemplates{
 					break;
 				}
 		}
-		return std::move(response_message);
+		return response_message;
 	}
 }

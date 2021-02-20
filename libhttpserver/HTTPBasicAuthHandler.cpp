@@ -14,11 +14,11 @@
 
 HTTP::BasicAuth::BasicAuthHandler::BasicAuthHandler(const std::string& cred_file)
 	: _auth_cred_filename{cred_file} {
-	this->m_populate_map();
+	m_populate_map();
 	}
 
 void HTTP::BasicAuth::BasicAuthHandler::m_populate_map(){
-	std::ifstream cred_stream{this->_auth_cred_filename};
+	std::ifstream cred_stream{_auth_cred_filename};
 	std::string file_data;
 	if(!cred_stream.is_open()){
 	 	perror("Unable to open API auth file for REST services\n");
@@ -32,7 +32,7 @@ void HTTP::BasicAuth::BasicAuthHandler::m_populate_map(){
 	auto json_reader = nlohmann::json::parse(file_data);
 	for(const auto& endpoints : json_reader.items()){
 		for(const auto& credentials : endpoints.value().items()){
-			this->_endpoint_cred_map[endpoints.key()].emplace_back(credentials.key(), credentials.value());
+			_endpoint_cred_map[endpoints.key()].emplace_back(credentials.key(), credentials.value());
 		}
 	}
 }
@@ -41,17 +41,17 @@ bool HTTP::BasicAuth::BasicAuthHandler::check_credentials(
 		const std::string &endpoint, const std::string &encoded_auth_param){
 	// Lets parse the user-id:password from the base64 encoded user-agent request;
 	std::optional<std::pair<std::string, std::string>> parsed_results = 
-		this->m_basic_auth_cred_parser(base64::b64decode(
-					reinterpret_cast<const unsigned char*>(encoded_auth_param.c_str()), encoded_auth_param.size()
-					));
+		m_basic_auth_cred_parser(base64::b64decode(
+			reinterpret_cast<const unsigned char*>(encoded_auth_param.c_str()), encoded_auth_param.size()
+				));
 	if(!parsed_results.has_value()){ return false; }
 	// user-agent sent a User:Pass even though the endpoint does not need authorization
-	if(!this->_endpoint_cred_map.contains(endpoint)){ return true; }
-	const std::vector<std::pair<std::string, std::string>>& user_creds = this->_endpoint_cred_map.at(endpoint);
+	if(!_endpoint_cred_map.contains(endpoint)){ return true; }
+	const std::vector<std::pair<std::string, std::string>>& user_creds = _endpoint_cred_map.at(endpoint);
 	auto result = std::find_if(std::begin(user_creds), std::end(user_creds), 
 			[&parsed_results](const std::pair<std::string, std::string>& values) -> bool {
-				return ((values.first == parsed_results.value().first) && 
-						BCrypt::validatePassword(parsed_results.value().second, values.second));
+			    return ((values.first == parsed_results.value().first) && 
+					BCrypt::validatePassword(parsed_results.value().second, values.second));
 			});
 	if(result == std::end(user_creds)){ return false; }
 	return true;

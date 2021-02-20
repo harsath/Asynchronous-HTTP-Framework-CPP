@@ -26,3 +26,16 @@ This directory contains 3rd-party software.
 		License type: MIT
 		Project URL: https://github.com/trusch/libbcrypt
 		Copyright: (c) Tino Rusch
+	[5] Blueth:
+		Personal collection of C++ helpers
+		Commit Hash: UPSTREAM
+		License type: MIT
+		Project URL: https://github.com/harsath/Blueth
+		Copyright: (c) Harsath
+	[6] wolfSSL:
+		Embedded SSL/TLS Library
+		Commit Hash: 830de9a9fb99e30f9ac9caa0a7f7bba29c3b4863
+		Release: 4.7.0
+		Library type: GPLv2
+		Project URL: https://github.com/wolfSSL/wolfssl
+		Copyright: (c) wolfSSL Inc

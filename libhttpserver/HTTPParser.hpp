@@ -1,11 +1,11 @@
 #pragma once
 #include "HTTPMessage.hpp"
+#include <io/IOBuffer.hpp>
 #include <memory>
 #include <optional>
 #include <utility>
 
-namespace HTTP{
-	namespace HTTP1Parser{
+namespace HTTP::HTTP1Parser{
 		enum class ParserState : std::uint32_t {
 			PROTOCOL_ERROR,
 
@@ -24,7 +24,7 @@ namespace HTTP{
 			REQUEST_LINE_LF,
 			
 			// Message-Headers
-			HEADER_NAME_BEGIN = 150,
+			HEADER_NAME_BEGIN,
 			HEADER_NAME,
 			HEADER_VALUE_BEGIN,
 			HEADER_VALUE,
@@ -33,13 +33,14 @@ namespace HTTP{
 			HEADER_END_LF,
 
 			// Message-Content
-			CONTENT_BEGIN = 200,
 			CONTENT,
-			CONTENT_END,
+
+			// Final state after processed
+			PARSING_DONE
 		};
 
 		enum class MessageParts : std::uint8_t {
-			REQUEST_LINE = 0,
+			REQUEST_LINE = 1,
 			HEADERS,
 			Body
 		};
@@ -48,33 +49,15 @@ namespace HTTP{
 			CR = 0x0D, LF = 0x0A, SP = 0x20, HT = 0x09
 		};
 
-		class HTTPParser{
-			private:
-				std::unique_ptr<HTTP::HTTPMessage> _HTTPMessage{nullptr};
-				std::size_t _parsed_bytes{};
-				const char* _parser_input;
-				bool _finished_parsing{false};
-				// Indicates ProtocolError() aka Bad request from Client(as per specification)
-				bool _parse_fail{false};
-			public:
-				ParserState State;
-				HTTPParser(const char* parser_input);
-				std::size_t ParseBytes();
-				std::size_t ContentLength() const noexcept;
-				bool IsProcessingHeader() const noexcept;
-				bool IsProcessingBody() const noexcept;
-				void SetProcessingBoolean(const MessageParts& set_message_part);
-				[[nodiscard]] std::pair<bool, std::unique_ptr<HTTP::HTTPMessage>> GetParsedMessage() noexcept;
-		};
-		inline std::string state_as_string(const ParserState& state);
-	} // end namespace HTTP1Parser
+		[[nodiscard]] std::pair<ParserState, std::unique_ptr<HTTP::HTTPMessage>> 
+		HTTP11Parser(const std::unique_ptr<blueth::io::IOBuffer<char>>&, ParserState&,
+				std::unique_ptr<HTTP::HTTPMessage>);
 
-	namespace HTTPParserHelper{
-		inline bool is_char(char value);
-		inline bool is_control(char value);
-		inline bool is_separator(char value);
-		inline bool is_token(char value);
-		inline bool is_text(char value);
-	} // end namespace HTTPParserHelper
+		std::string state_as_string(const ParserState& state);
+		bool is_char(char value);
+		bool is_control(char value);
+		bool is_separator(char value);
+		bool is_token(char value);
+		bool is_text(char value);
 
-} // end namespace HTTP
+} // end namespace HTTP::HTTP1Parser

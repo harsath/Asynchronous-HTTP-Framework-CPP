@@ -1,155 +1,100 @@
 #include "HTTPAcceptor.hpp"
 #include "HTTPBasicAuthHandler.hpp"
 #include "HTTPLogHelpers.hpp"
-#include "HTTPResponder.hpp"
-#include "HTTPSSLHelpers.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPHelpers.hpp"
 #include "HTTPHandler.hpp"
-#include "TCPEndpoint.hpp"
+#include <asm-generic/errno.h>
+#include <cstdio>
+#include <cstdlib>
+#include <net/Socket.hpp>
+#include "internal/AsyncHelpers.hpp"
+#include "internal/SSLHelpers.hpp"
 #include <arpa/inet.h>
 #include <asm-generic/socket.h>
 #include <cstring>
 #include <memory>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 
 #define debug_print(val) std::cout << val << std::endl
+Async::PeerState Async::GlobalPeerState[Async::MAXFDS];
+HTTP::HTTPHandler::HTTPHandlerContext HTTP::HTTPHandler::HTTPHandlerContextHolder;
 
+
+using namespace blueth::net::Transport;
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(
 		const std::string& server_addr,
 		const std::uint16_t server_port,
 		int server_backlog,
-		HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
 		const std::string& path_to_root,
 		const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints,
 		const std::string& ssl_cert,
 		const std::string& ssl_private_key,
 		const std::string& auth_cred_file	
 		) noexcept {
-
-	using namespace Transport;
-	this->_server_type = server_type;
-
-	TCPEndpoint tcp_endpoint_move(
-			std::move(server_addr), std::move(server_port), server_backlog,
-			TransportType::TCP, Domain::IPv4, SockType::Stream
-			);
-	tcp_endpoint_move.SetSocketOption(SockOptLevel::SocketLevel, SocketOptions::ReuseAddress);
-	tcp_endpoint_move.SetSocketOption(SockOptLevel::TcpLevel, SocketOptions::TcpNoDelay);
-	this->_TCPEndpoint = std::move(tcp_endpoint_move);
-	this->_TCPEndpoint.bind_sock();	
+	using namespace HTTP;
 	
-	this->_http_handler_ptr = std::make_unique<HTTP::HTTPHandler::HTTPHandler>(path_to_root);
-	for(std::size_t i{}; i < http_post_endpoints.size(); i++){
-		this->_http_handler_ptr->HTTPCreateEndpoint(std::move(http_post_endpoints.at(i)));	
-	}
-	this->_HTTPLogHandler = new HTTP::LOG::AccessContext("HTTP-Plaintext.log");
-	if(auth_cred_file != "")
-		this->_http_basic_auth_handler = new HTTP::BasicAuth::BasicAuthHandler{auth_cred_file};
-}
+	HTTPHelpers::HTTPGenerateRouteMap(HTTPHandler::HTTPHandlerContextHolder.filename_and_filepath_map, path_to_root);
+	Socket plain_socket(server_addr, server_port, server_backlog, Domain::Ipv4, SockType::Stream);
+	plain_socket.make_socket_nonblocking();
+	plain_socket.set_socket_options(SockOptLevel::SocketLevel, SocketOptions::ReuseAddress);
+	plain_socket.set_socket_options(SockOptLevel::TcpLevel, SocketOptions::TcpNoDelay);
 
-void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamAccept() noexcept {
-	for(;;){
-		this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
-		this->_HTTPContext->ServerInfo.ServerIP = this->_TCPEndpoint.get_ip();
-		this->_HTTPContext->ServerInfo.ServerPort = this->_TCPEndpoint.get_port();
-		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER;
-		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
-		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
-		this->_HTTPContext->BasicAuthHandler = this->_http_basic_auth_handler;
-
-		int client_fd = this->_TCPEndpoint.accept_loop();
-		bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
-		if(sentinel_check){
-			// recv()
-			this->_TCPEndpoint.read_buff(this->_acceptor_read_buff, this->_acceptor_read_buff_size);
-
-			this->_HTTPContext->HTTPClientFD = client_fd;
-			this->_HTTPContext->HTTPLogHolder.client_ip = this->_TCPEndpoint.get_serving_client_ip();
-
-			this->_http_handler_ptr->HTTPHandleConnection(
-					std::move(this->_HTTPContext), 
-					this->_acceptor_read_buff, 
-					this->_acceptor_read_buff_size);
-
-			this->_TCPEndpoint.close_serving_client_connection();
-			::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
-			std::cout << "HTTP-Transaction done\n";
-		}
+	_plain_socket = std::move(plain_socket);
+	_plain_socket.bind_sock();
+	HTTPHandler::HTTPHandlerContextHolder.auth_credentials_file = auth_cred_file;
+	HTTPHandler::HTTPHandlerContextHolder.path_to_root = path_to_root;
+	HTTPHandler::HTTPHandlerContextHolder.server_type = HTTPConst::HTTP_SERVER_TYPE::PLAINTEXT_SERVER;
+	HTTPHandler::HTTPHandlerContextHolder.basic_auth_handler = 
+		std::make_unique<HTTP::BasicAuth::BasicAuthHandler>(auth_cred_file);
+	for(auto& post_endpoint : http_post_endpoints){
+		HTTPHandler::HTTPHandlerContextHolder.post_endpoint_and_callback.insert(
+			{post_endpoint.post_endpoint, {post_endpoint.post_accept_type, post_endpoint.callback_fn}}
+		);
 	}
 }
 
-HTTP::HTTPAcceptor::HTTPAcceptorPlainText::~HTTPAcceptorPlainText(){
-	delete this->_HTTPLogHandler;
+void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPRunEventloop() {
+	Async::event_loop_plaintext(_plain_socket.get_file_descriptor());
 }
 
 void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamSock(
-		const std::string& server_addr,
-		const std::uint16_t server_port,
-		int server_backlog,
-		HTTP::HTTPConst::HTTP_SERVER_TYPE server_type,
-		const std::string& path_to_root,
-		const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints,
-		const std::string& ssl_cert,
-		const std::string& ssl_private_key,
-		const std::string& auth_cred_file
-		) noexcept {
+ 		const std::string& server_addr,
+ 		const std::uint16_t server_port,
+ 		int server_backlog,
+ 		const std::string& path_to_root,
+ 		const std::vector<HTTP::HTTPHandler::HTTPPostEndpoint>& http_post_endpoints,
+ 		const std::string& ssl_cert,
+ 		const std::string& ssl_private_key,
+ 		const std::string& auth_cred_file
+ 		) noexcept {
 
-	this->_SSLContext = HTTP::SSL::HTTPConfigSSLContext(ssl_cert.c_str(), ssl_private_key.c_str());
-	using namespace Transport;
-	this->_server_type = server_type;
+	HTTPHelpers::HTTPGenerateRouteMap(HTTPHandler::HTTPHandlerContextHolder.filename_and_filepath_map, path_to_root);
+	Socket ssl_socket(server_addr, server_port, server_backlog, Domain::Ipv4, SockType::Stream);
+	//ssl_socket.make_socket_nonblocking();
+	ssl_socket.set_socket_options(SockOptLevel::SocketLevel, SocketOptions::ReuseAddress);
+	ssl_socket.set_socket_options(SockOptLevel::TcpLevel, SocketOptions::TcpNoDelay);
 
-	TCPEndpoint tcp_endpoint_move(
-			std::move(server_addr), std::move(server_port), server_backlog,
-			TransportType::TCP, Domain::IPv4, SockType::Stream
-			);
-	tcp_endpoint_move.SetSocketOption(SockOptLevel::SocketLevel, SocketOptions::ReuseAddress);
-	tcp_endpoint_move.SetSocketOption(SockOptLevel::TcpLevel, SocketOptions::TcpNoDelay);
-	this->_TCPEndpoint = std::move(tcp_endpoint_move);
-	this->_TCPEndpoint.bind_sock();	
-
-	this->_http_handler_ptr = std::make_unique<HTTP::HTTPHandler::HTTPHandler>(path_to_root);
-	for(std::size_t i{}; i < http_post_endpoints.size(); i++){
-		this->_http_handler_ptr->HTTPCreateEndpoint(std::move(http_post_endpoints.at(i)));	
+	_ssl_socket = std::move(ssl_socket);
+	_ssl_socket.bind_sock();
+	HTTPHandler::HTTPHandlerContextHolder.auth_credentials_file = auth_cred_file;
+	HTTPHandler::HTTPHandlerContextHolder.path_to_root = path_to_root;
+	HTTPHandler::HTTPHandlerContextHolder.ssl_context = SSL::InitSslContext(ssl_cert, ssl_private_key);
+	HTTPHandler::HTTPHandlerContextHolder.ssl_cert = ssl_cert;
+	HTTPHandler::HTTPHandlerContextHolder.ssl_private_key = ssl_private_key;
+	HTTPHandler::HTTPHandlerContextHolder.server_type = HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER;
+	HTTPHandler::HTTPHandlerContextHolder.basic_auth_handler = 
+		std::make_unique<HTTP::BasicAuth::BasicAuthHandler>(auth_cred_file);
+	for(auto& post_endpoint : http_post_endpoints){
+		HTTPHandler::HTTPHandlerContextHolder.post_endpoint_and_callback.insert(
+			{post_endpoint.post_endpoint, {post_endpoint.post_accept_type, post_endpoint.callback_fn}}
+		);
 	}
-	this->_HTTPLogHandler = new HTTP::LOG::AccessContext("HTTP-SSL.log");
-	if(auth_cred_file.size() != 0)
-		this->_http_basic_auth_handler = new HTTP::BasicAuth::BasicAuthHandler{auth_cred_file};
-}
+ }
 
-void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPStreamAccept() noexcept {
-	this->_HTTPLogHandler = new HTTP::LOG::AccessContext("HTTP-SSL.log");
-	for(;;){
-		this->_HTTPContext = std::make_unique<HTTP::HTTPHelpers::HTTPTransactionContext>();
-		this->_HTTPContext->ServerInfo.ServerIP = this->_TCPEndpoint.get_ip();
-		this->_HTTPContext->ServerInfo.ServerPort = this->_TCPEndpoint.get_port();
-		this->_HTTPContext->HTTPServerType = HTTP::HTTPConst::HTTP_SERVER_TYPE::SSL_SERVER;
-		this->_HTTPContext->HTTPResponseState = HTTP::HTTPConst::HTTP_RESPONSE_CODE::OK;
-		this->_HTTPContext->HTTPLogHandler = this->_HTTPLogHandler;
-		this->_HTTPContext->BasicAuthHandler = this->_http_basic_auth_handler;
-
-		int client_fd = this->_TCPEndpoint.accept_loop();
-		bool sentinel_check = HTTP::HTTPHelpers::accept_err_handler(client_fd, "ignoring a client");
-		if(sentinel_check){
-			this->_HTTPContext->SSLConnectionHandler = HTTP::SSL::SSLConnectionAccept(this->_SSLContext.get(), client_fd);
-
-			HTTP::SSL::ssl_read_data(this->_HTTPContext->SSLConnectionHandler.get(), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
-
-			this->_HTTPContext->HTTPClientFD = client_fd;
-			this->_HTTPContext->HTTPLogHolder.client_ip = this->_TCPEndpoint.get_serving_client_ip();
-
-			this->_http_handler_ptr->HTTPHandleConnection(std::move(this->_HTTPContext), this->_acceptor_read_buff, this->_acceptor_read_buff_size);
-
-			HTTP::HTTPHelpers::close_connection(client_fd);
-
-			::memset(this->_acceptor_read_buff, 0, this->_acceptor_read_buff_size+1);
-			std::cout << "HTTPS-Transaction done\n";
-		}
-	}
-}
-
-HTTP::HTTPAcceptor::HTTPAcceptorSSL::~HTTPAcceptorSSL(){
-	delete this->_HTTPLogHandler;
+void HTTP::HTTPAcceptor::HTTPAcceptorSSL::HTTPRunEventloop(){
+	Async::event_loop_ssl(_ssl_socket.get_file_descriptor());
 }

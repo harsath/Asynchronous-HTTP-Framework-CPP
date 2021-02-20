@@ -42,10 +42,10 @@ sub run_tests {
 my $build_status = build_binary("..");
 unless($build_status == 0){
 	print "[Error]: Build returned failed exit code\n";
-	exit($build_status);
+	exit(1);
 }
 my $test_status = run_tests();
 unless($test_status == 0){
 	print "[Error]: Build returned failed exit code\n";
-	exit($build_status);
+	exit(1);
 }

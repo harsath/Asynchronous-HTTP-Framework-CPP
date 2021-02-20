@@ -1,0 +1,3 @@
+[submodule "vendor/Blueth"]
+	path = vendor/Blueth
+	url = https://github.com/harsath/Blueth.git

@@ -1,61 +1,26 @@
-// libhttpserver SSL HTTP Server Implementation
-// Copyright © 2020 Harsath
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation
-// the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the
-// Software is furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
-// OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 #pragma once
 #include <cctype>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <openssl/ossl_typ.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <unordered_map>
 #include <memory>
 #include <vector>
-#include <openssl/err.h>
 #include <unistd.h>
 #include <chrono>
 #include <fmt/format.h>
 #include "HTTPBasicAuthHandler.hpp"
 #include "HTTPConstants.hpp"
 #include "HTTPLogHelpers.hpp"
-#include "HTTPSSLHelpers.hpp"
 #include <filesystem>
 
 namespace HTTP::HTTPHelpers{
-	struct HTTPServerInfo{
-		 std::string ServerIP;
-		 std::string ServerPort;
-	};
-
 	struct HTTPTransactionContext{
-		HTTP::HTTPConst::HTTP_SERVER_TYPE HTTPServerType;
-		int HTTPClientFD;
-		HTTP::HTTPConst::HTTP_RESPONSE_CODE HTTPResponseState;
-		LOG::LogMessage HTTPLogHolder;
-		const HTTP::LOG::LoggerHelper* HTTPLogHandler;
-		std::unique_ptr<::SSL, HTTP::SSL::SSL_Deleter> SSLConnectionHandler;
-		bool HTTPWritten{false};
-		HTTPServerInfo ServerInfo;		
-		HTTP::BasicAuth::BasicAuthHandler* BasicAuthHandler{nullptr};
+		int peer_fd;
+		bool http_message_written{false};
+		std::string peer_ip;
 	};
 
 	struct Post_keyvalue{
@@ -74,13 +39,6 @@ namespace HTTP::HTTPHelpers{
 			perror(err_str.c_str());	
 			exit(EXIT_FAILURE);
 		}	
-	}
-
-	inline void ssl_err_check(int returner, const std::string& err_str){
-		if(returner < 0){
-			ERR_print_errors_fp(stderr);
-			exit(EXIT_FAILURE);
-		}
 	}
 
 	inline char* get_today_date_full(){
