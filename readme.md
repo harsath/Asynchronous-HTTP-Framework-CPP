@@ -1,8 +1,8 @@
-### SSL HTTP Application Server C++ Implementation
+### Asynchronous/event-driven HTTP Server/REST API Framework C++ Implementation (SSL and Authentication support)
 ![Linux Actions Status](https://github.com/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231/workflows/Linux/badge.svg) ![GitHub](https://img.shields.io/github/license/harsathAI/SSL-HTTP-Application-Server-CPP-RFC7231)
 
 ```
-Project  : C++ SSL HTTP Application Server & Parser Implementation (from scratch)
+Project  : Asynchronous C++ HTTP Application Server & REST API Framework (from scratch)
 RFC      : 7231
 Language : C++ (with POSIX APIs)
 
