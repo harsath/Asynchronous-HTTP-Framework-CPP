@@ -277,7 +277,7 @@ namespace Async{
 			int nready = ::epoll_wait(epoll_fd, events, MAXFDS, -1);
 			for(std::size_t peer_index{}; peer_index < nready; peer_index++){
 			  if(events[peer_index].events & EPOLLERR){
-				  std::perror("epoll_wait returned EPOLLERR");
+				std::perror("epoll_wait returned EPOLLERR");
 				::exit(EXIT_FAILURE);
 			  }  
 			  // New peer is trying to connect.
@@ -289,10 +289,11 @@ namespace Async{
 			    if(new_sock_fd < 0){
 				// This is extremely rare case
 			    	if(errno == EAGAIN || errno == EWOULDBLOCK){
-				  std::cout << "accept returned EAGIAN or EWOULDBLOCK\n"; 
+					std::cout << "accept returned EAGIAN or EWOULDBLOCK\n"; 
+					continue;
 			    	}else{
 					std::perror("accept");
-				  ::exit(EXIT_FAILURE);
+					::exit(EXIT_FAILURE);
 			    	}
 			    }else{
 				make_socket_nonblocking(new_sock_fd);
