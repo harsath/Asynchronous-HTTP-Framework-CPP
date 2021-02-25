@@ -55,7 +55,6 @@ namespace Async{
 	};
 
 	extern PeerState GlobalPeerState[MAXFDS];
-	//extern const HTTP::LOG::LoggerHelper* http_log_handler;
 
 	struct FDStatus{
 		bool want_read; bool want_write; 
@@ -251,6 +250,18 @@ namespace Async{
 		{ std::perror(perror_str); ::exit(EXIT_FAILURE); }
 	}
 
+	inline void _cleanup_peer_resource(int epoll_fd, int peer_fd){
+		// We processed the peer's HTTP request message, Let's close the connection
+		if(::epoll_ctl(epoll_fd, EPOLL_CTL_DEL, peer_fd, NULL) < 0)
+		{ std::perror("epoll_ctl EPOLL_CTL_DEL"); }
+		PeerState* current_peer_state = &GlobalPeerState[peer_fd];
+		current_peer_state->peer_transaction_context.reset();
+		current_peer_state->http_message_peer.reset();
+		current_peer_state->io_buffer_peer.reset();
+		current_peer_state->io_buffer_response.reset();
+		::close(peer_fd);
+	}
+
 	inline void event_loop_plaintext(int server_sock_fd){
 		using namespace HTTP;
 		using namespace HTTP::HTTPHandler;
@@ -321,16 +332,7 @@ namespace Async{
 				if(status.want_read) { event.events |= EPOLLIN; }
 				if(status.want_write){ event.events |= EPOLLOUT; }
 				if(event.events == 0){
-					// We processed the peer's HTTP request message, Let's close the connection
-					if(::epoll_ctl(epoll_fd, EPOLL_CTL_DEL, peer_fd, NULL) < 0){
-						std::perror("epoll_ctl EPOLL_CTL_DEL");
-					}
-					PeerState* current_peer_state = &GlobalPeerState[peer_fd];
-					current_peer_state->peer_transaction_context.reset();
-					current_peer_state->http_message_peer.reset();
-					current_peer_state->io_buffer_peer.reset();
-					current_peer_state->io_buffer_response.reset();
-					::close(peer_fd);
+					_cleanup_peer_resource(epoll_fd, peer_fd);
 				}else if(::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event) < 0){
 					std::perror("epoll_ctl EPOLL_CTL_MOD");
 					::exit(EXIT_FAILURE);
@@ -348,15 +350,7 @@ namespace Async{
 					event.events |= EPOLLOUT;
 				}
 				if(event.events == 0){
-					if(::epoll_ctl(epoll_fd, EPOLL_CTL_DEL, peer_fd, NULL) < 0){
-						std::perror("epoll_ctl EPOLL_CTL_DEL");
-					}
-					PeerState* current_peer_state = &GlobalPeerState[peer_fd];
-					current_peer_state->peer_transaction_context.reset();
-					current_peer_state->http_message_peer.reset();
-					current_peer_state->io_buffer_peer.reset();
-					current_peer_state->io_buffer_response.reset();
-					::close(peer_fd);
+					_cleanup_peer_resource(epoll_fd, peer_fd);
 				}else if(::epoll_ctl(epoll_fd, EPOLL_CTL_MOD, peer_fd, &event) < 0){
 					std::perror("epoll_ctl EPOLL_CTL_MOD");
 					::exit(EXIT_FAILURE);

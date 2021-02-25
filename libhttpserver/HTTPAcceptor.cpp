@@ -19,10 +19,8 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 
-#define debug_print(val) std::cout << val << std::endl
 Async::PeerState Async::GlobalPeerState[Async::MAXFDS];
 HTTP::HTTPHandler::HTTPHandlerContext HTTP::HTTPHandler::HTTPHandlerContextHolder;
-
 
 using namespace blueth::net::Transport;
 void HTTP::HTTPAcceptor::HTTPAcceptorPlainText::HTTPStreamSock(

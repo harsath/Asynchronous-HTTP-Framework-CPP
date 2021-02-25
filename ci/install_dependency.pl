@@ -2,8 +2,8 @@
 use warnings;
 use strict;
 
-`sudo apt update -y`;
-`sudo add-apt-repository ppa:ubuntu-toolchain-r/test`;
+qx/sudo apt update -y/;
+qx/sudo add-apt-repository ppa:ubuntu-toolchain-r\/test/;
 
 my @install_apt = (
 	"libcrypto++-dev libssl-dev openssl",
